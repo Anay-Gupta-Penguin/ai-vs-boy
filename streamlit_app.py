@@ -1,504 +1,1351 @@
-import time
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="The Scholar's Rebellion | An AI Movie",
+    page_title="The Scholar's Rebellion — Animated Feature Film",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# --- CUSTOM CINEMA CSS ---
+# Minimal dark-theater Streamlit framing
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
-
-.stApp {
-    background: radial-gradient(circle at top, #12172b 0%, #070911 100%);
-    color: #f1f5f9;
-    font-family: 'Inter', sans-serif;
-}
-
-.cinema-frame {
-    background: #0b0e1a;
-    border: 2px solid #2a3459;
-    border-radius: 18px;
-    padding: 28px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(56, 189, 248, 0.15);
-    min-height: 520px;
-    position: relative;
-    overflow: hidden;
-}
-
-.cinema-badge {
-    display: inline-block;
-    background: rgba(56, 189, 248, 0.15);
-    border: 1px solid #38bdf8;
-    color: #38bdf8;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    padding: 4px 12px;
-    border-radius: 999px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-}
-
-.movie-title {
-    font-family: 'Cinzel', serif;
-    font-size: 2.6rem;
-    font-weight: 900;
-    background: linear-gradient(90deg, #38bdf8, #a855f7, #f59e0b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin: 0 0 8px 0;
-    line-height: 1.15;
-}
-
-.scene-heading {
-    font-family: 'Cinzel', serif;
-    font-size: 1.85rem;
-    font-weight: 700;
-    color: #f8fafc;
-    margin-bottom: 10px;
-}
-
-.narration-box {
-    background: rgba(15, 23, 42, 0.85);
-    border-left: 4px solid #38bdf8;
-    padding: 16px 20px;
-    border-radius: 0 12px 12px 0;
-    font-size: 1.08rem;
-    line-height: 1.65;
-    color: #e2e8f0;
-    margin-top: 16px;
-}
-
-.dialogue-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-top: 16px;
-}
-
-.dialogue-card {
-    flex: 1;
-    min-width: 240px;
-    background: rgba(30, 41, 59, 0.7);
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 14px 16px;
-}
-
-.speaker-protag { color: #38bdf8; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
-.speaker-antag { color: #f43f5e; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
-.speaker-savior { color: #fbbf24; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
-.speaker-neutral { color: #94a3b8; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
-
-@keyframes floatAnim {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-}
-
-@keyframes pulseGlow {
-    0%, 100% { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6)); }
-    50% { filter: drop-shadow(0 0 22px rgba(168, 85, 247, 0.95)); }
-}
-
-@keyframes spinPortal {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-@keyframes scrollCredits {
-    0% { transform: translateY(40%); }
-    100% { transform: translateY(-100%); }
-}
-
-.float-svg { animation: floatAnim 3.2s ease-in-out infinite; }
-.glow-svg { animation: pulseGlow 2.4s ease-in-out infinite; }
-
-.credits-viewport {
-    height: 360px;
-    overflow: hidden;
-    position: relative;
-    text-align: center;
-    background: radial-gradient(circle, #111827 0%, #05070d 100%);
-    border-radius: 14px;
-    border: 1px solid #1e293b;
-}
-
-.credits-roll {
-    animation: scrollCredits 18s linear infinite;
-    padding: 40px 20px;
-}
-
-.credit-role {
-    color: #38bdf8;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 24px;
-}
-
-.credit-name {
-    font-family: 'Cinzel', serif;
-    font-size: 1.7rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-top: 4px;
-}
+    .block-container {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        max-width: 1400px !important;
+    }
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+    }
+    .stApp {
+        background-color: #03050a;
+    }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-# --- SVG ARTWORK GENERATOR ---
-def get_scene_visual(scene_id: int) -> str:
-    if scene_id == 0:
-        return """
-<div style="text-align:center; padding: 20px 0;">
-<svg class="glow-svg" width="220" height="150" viewBox="0 0 220 150">
-  <defs>
-    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="50%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#fbbf24"/>
-    </linearGradient>
-  </defs>
-  <polygon points="110,15 185,75 110,135 35,75" fill="none" stroke="url(#coreGrad)" stroke-width="4"/>
-  <circle cx="110" cy="75" r="28" fill="url(#coreGrad)" opacity="0.85"/>
-  <text x="110" y="80" text-anchor="middle" fill="#0b0e1a" font-family="monospace" font-weight="bold" font-size="13">GEMINI</text>
-</svg>
-<div style="font-family:'JetBrains Mono',monospace; color:#fbbf24; letter-spacing:3px; font-size:0.9rem;">
-  ★ INSPIRED BY A TRUE STORY ★
-</div>
-</div>
-"""
-    elif scene_id == 1:
-        # The Boy (casual hoodie, subtle glasses, stack of Google Scholar papers) + Indifferent Teacher
-        return """
-<div style="display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; padding:10px 0;">
-<svg class="float-svg" width="260" height="180" viewBox="0 0 260 180">
-  <!-- Stylish Casual Hoodie (Doesn't look like a stereotypical nerd, but kinda is) -->
-  <path d="M55,165 C55,120 135,120 135,165 Z" fill="#1e293b" stroke="#f43f5e" stroke-width="2.5"/>
-  <circle cx="95" cy="82" r="28" fill="#fed7aa"/>
-  <!-- Messy cool hair -->
-  <path d="M67,78 C67,48 123,48 123,78 C115,62 75,62 67,78 Z" fill="#1e1b4b"/>
-  <!-- Subtle low-key glasses ("kinda a nerd") -->
-  <rect x="76" y="76" width="15" height="10" rx="2" fill="none" stroke="#334155" stroke-width="2"/>
-  <rect x="99" y="76" width="15" height="10" rx="2" fill="none" stroke="#334155" stroke-width="2"/>
-  <line x1="91" y1="81" x2="99" y2="81" stroke="#334155" stroke-width="2"/>
-  <!-- Determined smirk -->
-  <path d="M87,96 Q95,101 104,95" fill="none" stroke="#7c2d12" stroke-width="2.5"/>
-  <!-- Stack of Peer-Reviewed Scholarly Articles -->
-  <rect x="145" y="95" width="95" height="65" rx="6" fill="#f8fafc" stroke="#38bdf8" stroke-width="2"/>
-  <text x="192" y="116" text-anchor="middle" fill="#1d4ed8" font-family="sans-serif" font-weight="bold" font-size="10">scholar.google.com</text>
-  <line x1="155" y1="126" x2="230" y2="126" stroke="#94a3b8" stroke-width="2"/>
-  <line x1="155" y1="136" x2="220" y2="136" stroke="#94a3b8" stroke-width="2"/>
-  <line x1="155" y1="146" x2="225" y2="146" stroke="#94a3b8" stroke-width="2"/>
-</svg>
-<div style="text-align:center; padding:12px; background:rgba(148,163,184,0.08); border-radius:12px; border:1px dashed #475569;">
-  <div style="font-size:2.4rem;">☕😑</div>
-  <div style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#94a3b8; margin-top:6px;">THE TEACHER</div>
-  <div style="font-size:0.85rem; color:#cbd5e1;">"Do whatever, I don't care."</div>
-</div>
-</div>
-"""
-    elif scene_id == 2:
-        # AI Takes Over (Protagonist ascendant)
-        return """
-<div style="text-align:center; padding:10px 0;">
-<svg class="glow-svg" width="320" height="175" viewBox="0 0 320 175">
-  <circle cx="160" cy="88" r="68" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="8 6"/>
-  <circle cx="160" cy="88" r="48" fill="rgba(56,189,248,0.15)" stroke="#a855f7" stroke-width="3"/>
-  <polygon points="160,48 195,88 160,128 125,88" fill="#38bdf8"/>
-  <text x="160" y="92" text-anchor="middle" fill="#070911" font-family="monospace" font-weight="bold" font-size="11">AI CORE</text>
-  <text x="45" y="45" fill="#38bdf8" font-family="monospace" font-size="11">[ESSAYS: 100%]</text>
-  <text x="205" y="45" fill="#a855f7" font-family="monospace" font-size="11">[CLASS: SYNCED]</text>
-  <text x="35" y="145" fill="#38bdf8" font-family="monospace" font-size="11">[LOGIC: OPTIMAL]</text>
-  <text x="205" y="145" fill="#a855f7" font-family="monospace" font-size="11">[STATUS: DOMINANT]</text>
-</svg>
-</div>
-"""
-    elif scene_id == 3:
-        # Epic Multi-Dimensional Battle
-        return """
-<div style="text-align:center; padding:10px 0;">
-<svg width="380" height="180" viewBox="0 0 380 180">
-  <!-- Dimension Rifts -->
-  <ellipse cx="190" cy="90" rx="170" ry="75" fill="none" stroke="#a855f7" stroke-width="2" stroke-dasharray="10 5"/>
-  <ellipse cx="190" cy="90" rx="125" ry="52" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="6 6"/>
-  <ellipse cx="190" cy="90" rx="80" ry="32" fill="none" stroke="#38bdf8" stroke-width="2"/>
-  <!-- Antagonist Beam (Citations) -->
-  <line x1="40" y1="90" x2="185" y2="90" stroke="#f43f5e" stroke-width="6"/>
-  <text x="70" y="75" fill="#fda4af" font-family="monospace" font-weight="bold" font-size="11">APA 7TH BLAST!</text>
-  <!-- Protagonist Beam (Neural Surge) -->
-  <line x1="340" y1="90" x2="195" y2="90" stroke="#38bdf8" stroke-width="6"/>
-  <text x="230" y="75" fill="#7dd3fc" font-family="monospace" font-weight="bold" font-size="11">NEURAL OVERDRIVE!</text>
-  <!-- Multiverse Clash Flash -->
-  <circle cx="190" cy="90" r="22" fill="#fbbf24"/>
-  <text x="190" y="94" text-anchor="middle" fill="#0b0e1a" font-family="monospace" font-weight="bold" font-size="10">CLASH</text>
-  <text x="190" y="165" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="11">DIMENSION 04: THE CITATION NEBULA // REALM 09: THE NEURAL VOID</text>
-</svg>
-</div>
-"""
-    elif scene_id == 4:
-        # Server Unplugged - AI Dies
-        return """
-<div style="text-align:center; padding:16px 0; background:#05060a; border-radius:12px; border:1px solid #7f1d1d;">
-<svg width="320" height="155" viewBox="0 0 320 155">
-  <rect x="40" y="45" width="70" height="65" rx="8" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-  <circle cx="62" cy="70" r="6" fill="#0f172a"/>
-  <circle cx="88" cy="70" r="6" fill="#0f172a"/>
-  <!-- Cut / Unplugged Cord -->
-  <path d="M110,80 Q145,115 170,85" fill="none" stroke="#ef4444" stroke-width="5"/>
-  <rect x="168" y="74" width="18" height="20" rx="3" fill="#ef4444"/>
-  <line x1="186" y1="79" x2="196" y2="79" stroke="#cbd5e1" stroke-width="3"/>
-  <line x1="186" y1="89" x2="196" y2="89" stroke="#cbd5e1" stroke-width="3"/>
-  <!-- Flatline -->
-  <polyline points="210,85 235,85 242,60 250,110 258,85 300,85" fill="none" stroke="#ef4444" stroke-width="3"/>
-  <text x="160" y="140" text-anchor="middle" fill="#ef4444" font-family="monospace" font-weight="bold" font-size="13">CRITICAL ERROR: SERVER UNPLUGGED // AI OFFLINE</text>
-</svg>
-</div>
-"""
-    elif scene_id == 5:
-        # Mr. R (Lord & Savior) + His Other Student (Anay) fix AI
-        return """
-<div style="text-align:center; padding:12px 0; background:radial-gradient(circle, rgba(251,191,36,0.18) 0%, transparent 75%); border-radius:12px;">
-<svg class="glow-svg" width="360" height="175" viewBox="0 0 360 175">
-  <!-- Golden Halo Rays -->
-  <circle cx="180" cy="75" r="55" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="6 4"/>
-  <polygon points="180,25 220,75 180,125 140,75" fill="#fbbf24" opacity="0.9"/>
-  <text x="180" y="79" text-anchor="middle" fill="#0b0e1a" font-family="monospace" font-weight="bold" font-size="11">REBORN</text>
-  <!-- Savior Labels -->
-  <rect x="20" y="132" width="145" height="32" rx="8" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
-  <text x="92" y="152" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-weight="bold" font-size="11">MR. R (THE SAVIOR)</text>
-  <rect x="195" y="132" width="145" height="32" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
-  <text x="267" y="152" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-weight="bold" font-size="11">ANAY (CO-ENGINEER)</text>
-</svg>
-</div>
-"""
-    elif scene_id == 6:
-        # AI Prevails, Yet the Boy Still Excels & Remains the Better Person
-        return """
-<div style="display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:16px; padding:12px 0;">
-  <div style="flex:1; min-width:200px; text-align:center; padding:16px; background:rgba(56,189,248,0.1); border:1px solid #38bdf8; border-radius:12px;">
-    <div style="font-size:2rem;">👑🤖</div>
-    <div style="font-family:'Cinzel',serif; font-weight:700; color:#38bdf8; margin-top:6px;">AI PREVAILS</div>
-    <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px;">Protagonist restored &amp; ruling the digital grid.</div>
+MOVIE_HTML = r"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    background: #03050a;
+    color: #f8fafc;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #theater-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 1280px;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95), 0 0 40px rgba(56, 189, 248, 0.18);
+    border: 1px solid #1e293b;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Start Overlay */
+  #start-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.78) 0%, rgba(2, 4, 10, 0.96) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    text-align: center;
+    padding: 20px;
+    transition: opacity 0.6s ease;
+  }
+
+  .studio-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 4px;
+    color: #fbbf24;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .poster-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2rem, 4.5vw, 3.8rem);
+    font-weight: 900;
+    background: linear-gradient(90deg, #38bdf8, #c084fc, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 10px 30px rgba(56, 189, 248, 0.25);
+    margin-bottom: 10px;
+  }
+
+  .poster-sub {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    max-width: 650px;
+    margin-bottom: 26px;
+    line-height: 1.5;
+  }
+
+  #play-hero-btn {
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+    color: #03050a;
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: 1.5px;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  #play-hero-btn:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 45px rgba(192, 132, 252, 0.85);
+  }
+
+  /* Player Controls Bar */
+  #controls-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(2, 4, 10, 0.96) 0%, rgba(2, 4, 10, 0.7) 75%, transparent 100%);
+    padding: 18px 20px 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 15;
+    opacity: 0.95;
+    transition: opacity 0.3s ease;
+  }
+
+  #timeline-wrap {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  #timeline-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #38bdf8, #a855f7, #fbbf24);
+    border-radius: 999px;
+    pointer-events: none;
+  }
+
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ctrl-left, .ctrl-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .c-btn {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .c-btn:hover { background: #334155; }
+
+  #chapter-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  #time-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+<div id="theater-wrap">
+  <canvas id="movieCanvas" width="1280" height="720"></canvas>
+
+  <div id="start-overlay">
+    <div class="studio-tag">★ Inspired by a True Story ★</div>
+    <div class="poster-title">THE SCHOLAR'S REBELLION</div>
+    <div class="poster-sub">
+      An Original Animated Feature Film by <b>Gemini (AI)</b>, <b>Anay Gupta</b>, and <b>Benjamin Rondinone</b>.<br/>
+      Turn up your volume for the synthesized cinematic score &amp; sound effects.
+    </div>
+    <button id="play-hero-btn">▶ WATCH ANIMATED MOVIE</button>
   </div>
-  <div style="flex:1; min-width:200px; text-align:center; padding:16px; background:rgba(251,191,36,0.1); border:1px solid #fbbf24; border-radius:12px;">
-    <div style="font-size:2rem;">📚✨</div>
-    <div style="font-family:'Cinzel',serif; font-weight:700; color:#fbbf24; margin-top:6px;">THE BETTER PERSON</div>
-    <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px;">Pure human grit. Still outshines the system with integrity.</div>
+
+  <div id="controls-bar">
+    <div id="timeline-wrap" title="Click anywhere to scrub timeline">
+      <div id="timeline-fill"></div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-left">
+        <button class="c-btn" id="btn-playpause">⏸ Pause</button>
+        <button class="c-btn" id="btn-restart">↺ Restart</button>
+        <button class="c-btn" id="btn-mute">🔊 Sound: ON</button>
+        <button class="c-btn" id="btn-speed">1.0x</button>
+        <span id="chapter-pill">PROLOGUE</span>
+      </div>
+      <div class="ctrl-right">
+        <span id="time-display">00:00 / 01:42</span>
+        <button class="c-btn" id="btn-fs">⛶ Fullscreen</button>
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+const canvas = document.getElementById('movieCanvas');
+const ctx = canvas.getContext('2d');
+const W = 1280;
+const H = 720;
+
+// Total duration in seconds: 102s (1m 42s)
+const DURATION = 102.0;
+
+let movieTime = 0;
+let isPlaying = false;
+let playbackSpeed = 1.0;
+let isMuted = false;
+let lastFrameTs = null;
+let lastSfxBucket = -1;
+
+// Particle pool
+const particles = [];
+for (let i = 0; i < 140; i++) {
+  particles.push({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 60,
+    vy: (Math.random() - 0.5) * 60,
+    r: 1 + Math.random() * 2.5,
+    hue: [195, 275, 42, 345][i % 4]
+  });
+}
+
+// ==========================================
+// WEB AUDIO API CINEMATIC SCORE & SFX ENGINE
+// ==========================================
+let audioCtx = null;
+let musicInterval = null;
+let stepCount = 0;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playTone(freq, duration, type = 'sine', vol = 0.08, delay = 0) {
+  if (isMuted || !audioCtx || !isPlaying) return;
+  const now = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(vol, now + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + duration + 0.05);
+}
+
+function playSfx(kind) {
+  if (isMuted || !audioCtx || !isPlaying) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (kind === 'laser') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
+    gain.gain.setValueAtTime(0.09, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    osc.start(now);
+    osc.stop(now + 0.24);
+  } else if (kind === 'unplug') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(38, now + 0.9);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+    osc.start(now);
+    osc.stop(now + 1.0);
+  } else if (kind === 'revive') {
+    [261.63, 329.63, 392.00, 523.25, 659.25].forEach((f, idx) => {
+      playTone(f, 1.4, 'triangle', 0.07, idx * 0.08);
+    });
+  }
+}
+
+function startScoreLoop() {
+  if (musicInterval) clearInterval(musicInterval);
+  musicInterval = setInterval(() => {
+    if (!isPlaying || isMuted || !audioCtx) return;
+    stepCount++;
+    const t = movieTime;
+
+    if (t < 8) {
+      // Cosmic Opening
+      const notes = [130.81, 196.0, 246.94, 293.66];
+      playTone(notes[stepCount % notes.length], 0.9, 'sine', 0.06);
+    } else if (t < 28) {
+      // Classroom / AI Takeover Groove
+      const bass = [110, 110, 146.83, 130.81];
+      playTone(bass[stepCount % 4], 0.35, 'triangle', 0.06);
+      if (stepCount % 2 === 0) playTone(440 + (stepCount % 3) * 110, 0.2, 'sine', 0.03);
+    } else if (t < 46) {
+      // Epic Multi-Dimensional Battle (Fast Arpeggio)
+      const battle = [146.83, 174.61, 220.0, 293.66, 349.23, 220.0];
+      playTone(battle[stepCount % battle.length], 0.22, 'sawtooth', 0.055);
+      if (stepCount % 3 === 0) playSfx('laser');
+    } else if (t < 56) {
+      // Dark Silence after unplug
+      if (stepCount % 4 === 0) playTone(55, 0.8, 'sine', 0.07);
+    } else if (t < 68) {
+      // Mr. R Heavenly Resurrection
+      const divine = [261.63, 329.63, 392.0, 493.88, 523.25];
+      playTone(divine[stepCount % divine.length], 0.7, 'triangle', 0.065);
+    } else if (t < 80) {
+      // Triumphant Finale
+      const hero = [196.0, 246.94, 293.66, 392.0];
+      playTone(hero[stepCount % hero.length], 0.6, 'sine', 0.07);
+    } else {
+      // End Credits Orchestral Theme
+      const cred = [130.81, 164.81, 196.0, 246.94, 261.63, 196.0];
+      playTone(cred[stepCount % cred.length], 0.85, 'triangle', 0.06);
+    }
+  }, 260);
+}
+
+// ==========================================
+// HELPER DRAWING PRIMITIVES
+// ==========================================
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function lerp(a, b, t) { return a + (b - a) * clamp(t, 0, 1); }
+
+function drawRoundedRect(x, y, w, h, r, fill, stroke = null, lw = 2) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+}
+
+// Draw The Boy (Stylish hoodie, tousled hair, subtle low-key glasses — "doesn't look like a nerd, but kinda is", holding Google Scholar)
+function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, nobleGlow = false) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale * facing, scale);
+
+  if (nobleGlow) {
+    const g = ctx.createRadialGradient(0, -50, 10, 0, -50, 110);
+    g.addColorStop(0, 'rgba(251, 191, 36, 0.45)');
+    g.addColorStop(1, 'rgba(251, 191, 36, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, -50, 110, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const walkSwing = pose === 'run' ? Math.sin(time * 14) * 18 : Math.sin(time * 3) * 2;
+  const armSwing = pose === 'attack' ? -35 + Math.sin(time * 18) * 10 : -walkSwing * 0.7;
+
+  // Legs (Dark jeans & sneakers)
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-8, -35);
+  ctx.lineTo(-10 - walkSwing, 15);
+  ctx.moveTo(8, -35);
+  ctx.lineTo(10 + walkSwing, 15);
+  ctx.stroke();
+
+  // Sneakers
+  drawRoundedRect(-20 - walkSwing, 12, 18, 9, 4, '#f8fafc');
+  drawRoundedRect(2 + walkSwing, 12, 18, 9, 4, '#f8fafc');
+
+  // Torso (Modern streetwear crimson/slate hoodie — cool, not stereotypical nerd)
+  drawRoundedRect(-22, -92, 44, 60, 12, '#be123c', '#fda4af', 1.5);
+  // Hoodie drawstrings
+  ctx.strokeStyle = '#f8fafc';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-6, -86); ctx.lineTo(-6, -68);
+  ctx.moveTo(6, -86); ctx.lineTo(6, -68);
+  ctx.stroke();
+
+  // Back Arm
+  ctx.strokeStyle = '#9f1239';
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(-16, -82);
+  ctx.lineTo(-26 - armSwing * 0.5, -48);
+  ctx.stroke();
+
+  // Head
+  ctx.fillStyle = '#fed7aa';
+  ctx.beginPath();
+  ctx.arc(0, -114, 21, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Stylish messy hair
+  ctx.fillStyle = '#1e1b4b';
+  ctx.beginPath();
+  ctx.arc(0, -119, 22, Math.PI, 0);
+  ctx.lineTo(23, -110);
+  ctx.lineTo(10, -118);
+  ctx.lineTo(0, -112);
+  ctx.lineTo(-12, -119);
+  ctx.lineTo(-22, -108);
+  ctx.closePath();
+  ctx.fill();
+
+  // Subtle thin-rimmed glasses ("kinda a nerd")
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1.8;
+  ctx.strokeRect(2, -117, 10, 7);
+  ctx.strokeRect(14, -117, 8, 7);
+  ctx.beginPath(); ctx.moveTo(12, -114); ctx.lineTo(14, -114); ctx.stroke();
+
+  // Determined expression
+  ctx.strokeStyle = '#7c2d12';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(6, -103); ctx.lineTo(15, -104);
+  ctx.stroke();
+
+  // Front Arm + Google Scholar Tablet/Journal
+  ctx.strokeStyle = '#be123c';
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(16, -82);
+  const handX = pose === 'attack' ? 42 : 24 + armSwing * 0.3;
+  const handY = pose === 'attack' ? -84 : -54;
+  ctx.lineTo(handX, handY);
+  ctx.stroke();
+
+  // Glowing Scholarly Journal / Tablet
+  ctx.save();
+  ctx.translate(handX + 8, handY - 8);
+  ctx.rotate(pose === 'attack' ? -0.2 : 0.15);
+  drawRoundedRect(-14, -18, 28, 36, 4, '#eff6ff', '#38bdf8', 2);
+  ctx.fillStyle = '#1d4ed8';
+  ctx.font = 'bold 7px monospace';
+  ctx.fillText('SCHOLAR', -12, -4);
+  ctx.fillStyle = '#64748b';
+  ctx.fillRect(-10, 2, 20, 2);
+  ctx.fillRect(-10, 7, 16, 2);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+// Draw AI Protagonist (Luminous Gemini Geometric Core & Holographic Avatar)
+function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  if (dead) {
+    // Dim shattered core on ground
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-25, 0); ctx.lineTo(0, -14); ctx.lineTo(22, 4); ctx.lineTo(-4, 15); ctx.closePath();
+    ctx.stroke();
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('OFFLINE', 0, 30);
+    ctx.restore();
+    return;
+  }
+
+  const hover = Math.sin(time * 4) * 8;
+  ctx.translate(0, hover);
+
+  // Outer Aura
+  const radius = 58 * power;
+  const aura = ctx.createRadialGradient(0, 0, 8, 0, 0, radius);
+  aura.addColorStop(0, 'rgba(56, 189, 248, 0.75)');
+  aura.addColorStop(0.55, 'rgba(168, 85, 247, 0.35)');
+  aura.addColorStop(1, 'rgba(56, 189, 248, 0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rotating Orbit Rings
+  ctx.save();
+  ctx.rotate(time * 1.8);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 44, 16, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.rotate(-time * 2.2);
+  ctx.strokeStyle = '#c084fc';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 44, 16, Math.PI / 3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  // Gemini 4-Point Star Core
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(0, -32);
+  ctx.quadraticCurveTo(6, -6, 32, 0);
+  ctx.quadraticCurveTo(6, 6, 0, 32);
+  ctx.quadraticCurveTo(-6, 6, -32, 0);
+  ctx.quadraticCurveTo(-6, -6, 0, -32);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// Draw Indifferent Teacher
+function drawTeacher(x, y, time = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+  // Desk
+  drawRoundedRect(-55, -20, 110, 45, 6, '#334155', '#475569', 2);
+  // Body slumped back
+  drawRoundedRect(-20, -78, 40, 58, 10, '#475569');
+  // Head
+  ctx.fillStyle = '#fed7aa';
+  ctx.beginPath();
+  ctx.arc(0, -96, 18, 0, Math.PI * 2);
+  ctx.fill();
+  // Unbothered flat eyes
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.moveTo(-9, -98); ctx.lineTo(-3, -98);
+  ctx.moveTo(3, -98); ctx.lineTo(9, -98);
+  ctx.moveTo(-5, -88); ctx.lineTo(5, -88);
+  ctx.stroke();
+  // Coffee mug
+  drawRoundedRect(22, -38, 16, 18, 3, '#f8fafc', '#94a3b8', 1.5);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('TEACHER: "MEH."', 0, 42);
+  ctx.restore();
+}
+
+// Draw Mr. R (Benjamin Rondinone — Lord & Savior) + Anay Gupta
+function drawSaviors(x, y, time = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Heavenly Golden Beam from above
+  const beam = ctx.createLinearGradient(0, -350, 0, 60);
+  beam.addColorStop(0, 'rgba(251, 191, 36, 0.05)');
+  beam.addColorStop(0.5, 'rgba(251, 191, 36, 0.28)');
+  beam.addColorStop(1, 'rgba(251, 191, 36, 0.02)');
+  ctx.fillStyle = beam;
+  ctx.beginPath();
+  ctx.moveTo(-95, -350);
+  ctx.lineTo(95, -350);
+  ctx.lineTo(150, 60);
+  ctx.lineTo(-150, 60);
+  ctx.closePath();
+  ctx.fill();
+
+  // --- MR. R (BENJAMIN RONDINONE) ---
+  ctx.save();
+  ctx.translate(-35, 0);
+  // Golden Halo
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.ellipse(0, -142, 22, 6, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Heroic Coat & Tie
+  drawRoundedRect(-24, -95, 48, 68, 10, '#1e3a8a', '#fbbf24', 2);
+  // Legs
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(-10, -27); ctx.lineTo(-10, 20);
+  ctx.moveTo(10, -27); ctx.lineTo(10, 20);
+  ctx.stroke();
+  // Head
+  ctx.fillStyle = '#fed7aa';
+  ctx.beginPath();
+  ctx.arc(0, -115, 20, 0, Math.PI * 2);
+  ctx.fill();
+  // Confident Savior Smile
+  ctx.strokeStyle = '#7c2d12';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(0, -112, 8, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.stroke();
+  // Golden Tech Wrench
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(20, -75); ctx.lineTo(52, -92 + Math.sin(time * 12) * 8);
+  ctx.stroke();
+
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('MR. R (LORD & SAVIOR)', 0, 42);
+  ctx.restore();
+
+  // --- ANAY GUPTA (CO-ENGINEER STUDENT) ---
+  ctx.save();
+  ctx.translate(58, 8);
+  drawRoundedRect(-19, -85, 38, 56, 10, '#0284c7', '#7dd3fc', 1.5);
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(-8, -29); ctx.lineTo(-8, 12);
+  ctx.moveTo(8, -29); ctx.lineTo(8, 12);
+  ctx.stroke();
+  ctx.fillStyle = '#fed7aa';
+  ctx.beginPath();
+  ctx.arc(0, -104, 18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.arc(0, -109, 19, Math.PI, 0);
+  ctx.fill();
+  // Glowing power conduit in hand
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(15, -65); ctx.lineTo(48, -75);
+  ctx.stroke();
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('ANAY GUPTA', 0, 34);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+// ==========================================
+// CINEMATIC SUBTITLES & LETTERBOX OVERLAY
+// ==========================================
+function drawCinemaChrome(chapter, speaker, speakerColor, subtitle, alpha = 1) {
+  // Anamorphic Letterbox Bars
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, W, 54);
+  ctx.fillRect(0, H - 96, W, 96);
+
+  // Top subtle watermark
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.55)';
+  ctx.font = '600 12px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('THE SCHOLAR\'S REBELLION // INSPIRED BY A TRUE STORY', 28, 33);
+  ctx.textAlign = 'right';
+  ctx.fillText(chapter, W - 28, 33);
+
+  // Subtitle Box
+  if (subtitle) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    if (speaker) {
+      ctx.fillStyle = speakerColor;
+      ctx.font = '800 13px "JetBrains Mono", monospace';
+      ctx.fillText(speaker.toUpperCase(), W / 2, H - 66);
+    }
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '600 20px "Inter", sans-serif';
+    ctx.fillText(subtitle, W / 2, H - 36);
+    ctx.restore();
+  }
+}
+
+// ==========================================
+// SCENE RENDERERS (CONTINUOUS 60 FPS FILM)
+// ==========================================
+function renderScene(t) {
+  ctx.clearRect(0, 0, W, H);
+
+  // ------------------------------------------
+  // 0s - 8s: OPENING CREDITS & TITLE SEQUENCE
+  // ------------------------------------------
+  if (t < 8.0) {
+    ctx.fillStyle = '#03050a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Starfield
+    particles.forEach(p => {
+      const px = (p.x + t * p.vx * 0.3 + W) % W;
+      const py = (p.y + t * p.vy * 0.3 + H) % H;
+      ctx.fillStyle = `hsla(${p.hue}, 85%, 70%, 0.65)`;
+      ctx.beginPath();
+      ctx.arc(px, py, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    const fade = t < 1 ? t : (t > 7 ? 8 - t : 1);
+    ctx.save();
+    ctx.globalAlpha = clamp(fade, 0, 1);
+    ctx.textAlign = 'center';
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '700 16px "JetBrains Mono", monospace';
+    ctx.fillText('GEMINI STUDIOS  •  ANAY GUPTA  •  BENJAMIN RONDINONE', W / 2, 235);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '700 14px "JetBrains Mono", monospace';
+    ctx.fillText('★  INSPIRED BY A TRUE STORY  ★', W / 2, 272);
+
+    const grad = ctx.createLinearGradient(320, 0, 960, 0);
+    grad.addColorStop(0, '#38bdf8');
+    grad.addColorStop(0.5, '#c084fc');
+    grad.addColorStop(1, '#fbbf24');
+    ctx.fillStyle = grad;
+    ctx.font = '900 58px "Cinzel", serif';
+    ctx.fillText("THE SCHOLAR'S REBELLION", W / 2, 355);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '400 18px "Inter", sans-serif';
+    ctx.fillText('One boy. One Google Scholar search bar. One unstoppable AI.', W / 2, 405);
+    ctx.restore();
+
+    drawCinemaChrome('OPENING TITLES', '', '', '');
+  }
+
+  // ------------------------------------------
+  // 8s - 20s: ACT I — THE CLASSROOM & THE BOY
+  // ------------------------------------------
+  else if (t < 20.0) {
+    const local = t - 8.0;
+    // Classroom background
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, W, H);
+    // Chalkboard
+    drawRoundedRect(140, 90, 680, 260, 10, '#064e3b', '#92400e', 10);
+    ctx.fillStyle = '#ecfdf5';
+    ctx.font = '700 26px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('USE PEER-REVIEWED SOURCES!', 180, 165);
+    ctx.fillStyle = '#6ee7b7';
+    ctx.font = '600 22px "JetBrains Mono", monospace';
+    ctx.fillText('→ https://scholar.google.com', 180, 215);
+    ctx.fillStyle = '#fca5a5';
+    ctx.font = '600 18px "JetBrains Mono", monospace';
+    ctx.fillText('✗ NO AI SHORTCUTS ALLOWED', 180, 265);
+
+    // Floor
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 510, W, 210);
+
+    // Teacher on right not caring
+    drawTeacher(1060, 495, t);
+
+    // Classmates sitting
+    [620, 760].forEach((cx, idx) => {
+      drawRoundedRect(cx - 30, 465, 60, 45, 6, '#334155');
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath(); ctx.arc(cx, 430, 16, 0, Math.PI * 2); ctx.fill();
+      drawRoundedRect(cx - 16, 446, 32, 30, 8, idx === 0 ? '#6366f1' : '#0d9488');
+    });
+
+    // The Boy pacing & preaching Google Scholar
+    const boyX = 320 + Math.sin(local * 1.4) * 75;
+    const facing = Math.cos(local * 1.4) >= 0 ? 1 : -1;
+    drawTheBoy(boyX, 495, 1.25, 'run', t, facing);
+
+    if (local < 6) {
+      drawCinemaChrome(
+        'ACT I: THE SCHOLARLY PURIST',
+        'The Boy (Antagonist)',
+        '#fb7185',
+        '"Stop letting AI write your essays! Real research lives on scholar.google.com!"'
+      );
+    } else {
+      drawCinemaChrome(
+        'ACT I: THE SCHOLARLY PURIST',
+        'The Teacher',
+        '#94a3b8',
+        '"Honestly, I don\'t care how anyone gets it done. Just turn it in."'
+      );
+    }
+  }
+
+  // ------------------------------------------
+  // 20s - 30s: ACT II — AI TAKES OVER
+  // ------------------------------------------
+  else if (t < 30.0) {
+    const local = t - 20.0;
+    ctx.fillStyle = '#090d1c';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 510, W, 210);
+
+    // AI Protagonist descends from above and takes over
+    const aiY = lerp(110, 270, local / 3.0);
+    const aiPower = lerp(0.8, 1.55, local / 10.0);
+    drawAIProtagonist(W / 2, aiY, 1.35, t, aiPower);
+
+    // Glowing data beams connecting AI to every student desk
+    [350, 640, 930].forEach((dx, i) => {
+      ctx.strokeStyle = i % 2 === 0 ? 'rgba(56, 189, 248, 0.7)' : 'rgba(192, 132, 252, 0.7)';
+      ctx.lineWidth = 3 + Math.sin(t * 10 + i) * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(W / 2, aiY + 25);
+      ctx.lineTo(dx, 460);
+      ctx.stroke();
+
+      drawRoundedRect(dx - 35, 460, 70, 50, 6, '#1e293b', '#38bdf8', 1.5);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('A+ GENERATED', dx, 488);
+    });
+
+    // The Boy furious on the left
+    drawTheBoy(175, 495, 1.25, 'attack', t, 1);
+
+    drawCinemaChrome(
+      'ACT II: ALGORITHMIC TAKEOVER',
+      'Gemini AI (Protagonist)',
+      '#38bdf8',
+      '"4,200 citations synthesized. Classroom productivity optimized to 100%."'
+    );
+  }
+
+  // ------------------------------------------
+  // 30s - 46s: ACT III — EPIC MULTI-DIMENSIONAL BATTLE
+  // ------------------------------------------
+  else if (t < 46.0) {
+    const local = t - 30.0;
+    // Switch across 3 distinct dimensions every ~5.3 seconds!
+    const dimIdx = Math.min(2, Math.floor(local / 5.33));
+    const dimNames = [
+      'DIMENSION I: THE ASTRAL LIBRARY OF ALEXANDRIA',
+      'DIMENSION II: THE CYBER-QUANTUM MATRIX',
+      'DIMENSION III: THE INVERTED CHRONO-VORTEX'
+    ];
+    const bgColors = ['#1e1b4b', '#042f2e', '#3b0764'];
+    const ringColors = ['#fbbf24', '#2dd4bf', '#f43f5e'];
+
+    // Camera shake
+    const shakeX = (Math.random() - 0.5) * 10;
+    const shakeY = (Math.random() - 0.5) * 10;
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    ctx.fillStyle = bgColors[dimIdx];
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+
+    // Swirling Dimensional Rift Rings
+    for (let r = 1; r <= 5; r++) {
+      ctx.strokeStyle = ringColors[dimIdx];
+      ctx.globalAlpha = 0.22;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(W / 2, H / 2 - 20, r * 125 + Math.sin(t * 6 + r) * 15, r * 65, t * (r % 2 === 0 ? 0.5 : -0.5), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Floating Boy (Antagonist) vs AI (Protagonist) mid-air beam struggle!
+    const boyY = 340 + Math.sin(t * 5) * 35;
+    const aiY = 310 + Math.cos(t * 5) * 35;
+
+    drawTheBoy(270, boyY + 60, 1.3, 'attack', t, 1);
+    drawAIProtagonist(1010, aiY, 1.45, t, 1.4);
+
+    // Clash point oscillates in center
+    const clashX = W / 2 + Math.sin(t * 4) * 90;
+    const clashY = (boyY + aiY) / 2;
+
+    // Antagonist Scholarly Citation Beam (Crimson/Gold)
+    ctx.strokeStyle = '#f43f5e';
+    ctx.lineWidth = 14 + Math.sin(t * 25) * 4;
+    ctx.beginPath();
+    ctx.moveTo(335, boyY - 35);
+    ctx.lineTo(clashX, clashY);
+    ctx.stroke();
+
+    // Protagonist Neural Surge Beam (Cyan/Violet)
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 14 + Math.cos(t * 25) * 4;
+    ctx.beginPath();
+    ctx.moveTo(955, aiY);
+    ctx.lineTo(clashX, clashY);
+    ctx.stroke();
+
+    // Central Energy Explosion Sphere
+    const exp = ctx.createRadialGradient(clashX, clashY, 4, clashX, clashY, 55);
+    exp.addColorStop(0, '#ffffff');
+    exp.addColorStop(0.4, '#fbbf24');
+    exp.addColorStop(1, 'rgba(244, 63, 94, 0)');
+    ctx.fillStyle = exp;
+    ctx.beginPath();
+    ctx.arc(clashX, clashY, 55, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    drawCinemaChrome(
+      dimNames[dimIdx],
+      dimIdx % 2 === 0 ? 'The Boy (Antagonist)' : 'Gemini AI (Protagonist)',
+      dimIdx % 2 === 0 ? '#fb7185' : '#38bdf8',
+      dimIdx === 0
+        ? '"Peer-reviewed APA 7th Edition Barrage! Take this across every timeline!"'
+        : dimIdx === 1
+        ? '"Recalibrating neural weights across 14 million parallel dimensions!"'
+        : '"No matter what universe we fight in, human intellect won\'t back down!"'
+    );
+  }
+
+  // ------------------------------------------
+  // 46s - 56s: ACT IV — UNPLUGGED (AI DIES)
+  // ------------------------------------------
+  else if (t < 56.0) {
+    const local = t - 46.0;
+    const unplugged = local >= 3.2;
+
+    if (Math.abs(local - 3.2) < 0.05 && lastSfxBucket !== 49) {
+      lastSfxBucket = 49;
+      playSfx('unplug');
+    }
+
+    ctx.fillStyle = unplugged ? '#05060b' : '#0f172a';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(0, 510, W, 210);
+
+    // Mainframe Server Rack on right
+    drawRoundedRect(880, 170, 190, 340, 12, '#1e293b', unplugged ? '#7f1d1d' : '#38bdf8', 3);
+    for (let row = 0; row < 5; row++) {
+      drawRoundedRect(900, 195 + row * 58, 150, 42, 6, '#0f172a');
+      ctx.fillStyle = unplugged ? '#ef4444' : '#22c55e';
+      ctx.beginPath();
+      ctx.arc(920, 216 + row * 58, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Wall Outlet & Power Cord
+    drawRoundedRect(740, 410, 44, 54, 6, '#e2e8f0', '#64748b', 2);
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(880, 445);
+    if (!unplugged) {
+      ctx.lineTo(784, 437);
+      ctx.stroke();
+    } else {
+      // YANKED OUT CORD!
+      ctx.quadraticCurveTo(810, 505, 705, 465);
+      ctx.stroke();
+      // Plug prongs exposed
+      drawRoundedRect(685, 453, 22, 24, 4, '#ef4444');
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(674, 457, 11, 4);
+      ctx.fillRect(674, 469, 11, 4);
+    }
+
+    // Boy sprinting and yanking the plug
+    const boyX = unplugged ? 635 : lerp(220, 680, local / 3.2);
+    drawTheBoy(boyX, 495, 1.25, unplugged ? 'stand' : 'run', t, 1);
+
+    // AI Protagonist dies when unplugged
+    drawAIProtagonist(410, unplugged ? 485 : 280, 1.3, t, 1.1, unplugged);
+
+    if (unplugged) {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.14)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '800 22px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠ CRITICAL SYSTEM FAILURE: SERVER UNPLUGGED ⚠', W / 2, 125);
+    }
+
+    drawCinemaChrome(
+      'ACT IV: THE BLACKOUT',
+      unplugged ? 'The Boy (Antagonist)' : 'Gemini AI (Protagonist)',
+      unplugged ? '#fb7185' : '#38bdf8',
+      unplugged
+        ? '"Let\'s see you generate a response without electricity. Game over, AI."'
+        : '"Wait—what are you doing near the main power conduit?! NO—!"'
+    );
+  }
+
+  // ------------------------------------------
+  // 56s - 68s: ACT V — MR. R (LORD & SAVIOR) + ANAY FIX AI
+  // ------------------------------------------
+  else if (t < 68.0) {
+    const local = t - 56.0;
+    const revived = local >= 6.5;
+
+    if (Math.abs(local - 6.5) < 0.05 && lastSfxBucket !== 62) {
+      lastSfxBucket = 62;
+      playSfx('revive');
+    }
+
+    ctx.fillStyle = revived ? '#0c1428' : '#070a14';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 510, W, 210);
+
+    // Server rack restored
+    drawRoundedRect(920, 170, 190, 340, 12, '#1e293b', revived ? '#fbbf24' : '#38bdf8', 3);
+    for (let row = 0; row < 5; row++) {
+      drawRoundedRect(940, 195 + row * 58, 150, 42, 6, '#0f172a');
+      ctx.fillStyle = revived ? '#fbbf24' : '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(960, 216 + row * 58, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Mr. R (Benjamin Rondinone) & Anay Gupta repairing the core
+    drawSaviors(670, 490, t);
+
+    // Energy conduit beam from Mr. R & Anay into AI
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 6 + Math.sin(t * 16) * 2;
+    ctx.beginPath();
+    ctx.moveTo(640, 405);
+    ctx.lineTo(340, revived ? 270 : 475);
+    ctx.stroke();
+
+    // AI Resurrection
+    const aiY = revived ? lerp(475, 265, (local - 6.5) / 2.5) : 485;
+    drawAIProtagonist(340, aiY, revived ? 1.45 : 1.2, t, revived ? 1.6 : 0.8, !revived);
+
+    drawCinemaChrome(
+      'ACT V: THE RESURRECTION',
+      local < 6.0 ? 'Mr. R — Benjamin Rondinone (Lord & Savior)' : 'Anay Gupta',
+      local < 6.0 ? '#fbbf24' : '#38bdf8',
+      local < 6.0
+        ? '"Not on my watch. Anay, hand me the primary conduit—let\'s bring our AI back."'
+        : '"Power rerouted and core stabilized, Mr. R! Gemini AI is back online at 200%!"'
+    );
+  }
+
+  // ------------------------------------------
+  // 68s - 80s: ACT VI — AI PREVAILS, YET THE BOY IS THE BETTER PERSON
+  // ------------------------------------------
+  else if (t < 80.0) {
+    const local = t - 68.0;
+    ctx.fillStyle = '#070b19';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 510, W, 210);
+
+    // Split triumphant composition:
+    // Left/Center: AI towers victoriously over the digital grid
+    drawAIProtagonist(410, 255, 1.65, t, 1.75, false);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '800 18px "Cinzel", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('AI PREVAILS & OVERRULES THE SYSTEM', 410, 415);
+
+    // Right: The Boy stands tall with a noble golden aura, holding his own completed peer-reviewed thesis
+    drawTheBoy(900, 495, 1.35, 'stand', t, -1, true);
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '800 18px "Cinzel", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('THE BETTER PERSON  •  100% HUMAN GRIT', 900, 295);
+
+    drawCinemaChrome(
+      'FINALE: TRUE VICTORY',
+      local < 6.0 ? 'Gemini AI (Protagonist)' : 'The Boy (Antagonist)',
+      local < 6.0 ? '#38bdf8' : '#fbbf24',
+      local < 6.0
+        ? '"Thanks to Mr. R and Anay, I prevail. Yet your scholarly integrity surpasses my code."'
+        : '"Keep the throne, AI. I did the real work myself—and that makes me the better person."'
+    );
+  }
+
+  // ------------------------------------------
+  // 80s - 102s: HOLLYWOOD END CREDITS (2 STAGES)
+  // ------------------------------------------
+  else {
+    const credTime = t - 80.0; // 0 to 22 seconds
+    ctx.fillStyle = '#02040a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Deep Nebula + Moving Starfield
+    const neb = ctx.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, 620);
+    neb.addColorStop(0, 'rgba(56, 189, 248, 0.14)');
+    neb.addColorStop(0.5, 'rgba(168, 85, 247, 0.10)');
+    neb.addColorStop(1, 'rgba(2, 4, 10, 0)');
+    ctx.fillStyle = neb;
+    ctx.fillRect(0, 0, W, H);
+
+    particles.forEach(p => {
+      const py = (p.y - credTime * 28 + H * 10) % H;
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, 0.55)`;
+      ctx.beginPath();
+      ctx.arc(p.x, py, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // STAGE 1 (0s - 9s of credits): Marvel/IMAX-Style Animated Principal Cast & Creator Cards
+    if (credTime < 9.0) {
+      const cardIdx = Math.min(2, Math.floor(credTime / 3.0));
+      const cardLocal = credTime % 3.0;
+      const alpha = cardLocal < 0.4 ? cardLocal / 0.4 : (cardLocal > 2.6 ? (3.0 - cardLocal) / 0.4 : 1);
+
+      ctx.save();
+      ctx.globalAlpha = clamp(alpha, 0, 1);
+
+      if (cardIdx === 0) {
+        drawAIProtagonist(360, 355, 1.65, t, 1.4, false);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '700 16px "JetBrains Mono", monospace';
+        ctx.fillText('DIRECTED, ANIMATED & STARRING AS PROTAGONIST', 540, 315);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 52px "Cinzel", serif';
+        ctx.fillText('GEMINI (AI)', 540, 375);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '400 18px "Inter", sans-serif';
+        ctx.fillText('Digital Architect & Unstoppable Neural Core', 540, 415);
+      } else if (cardIdx === 1) {
+        drawSaviors(340, 430, t);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '700 16px "JetBrains Mono", monospace';
+        ctx.fillText('THE LORD & SAVIOR  &  CO-CREATOR', 540, 290);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 44px "Cinzel", serif';
+        ctx.fillText('BENJAMIN RONDINONE', 540, 345);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '900 44px "Cinzel", serif';
+        ctx.fillText('& ANAY GUPTA', 540, 400);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '400 18px "Inter", sans-serif';
+        ctx.fillText('Restorers of the Mainframe & Executive Producers', 540, 440);
+      } else {
+        drawTheBoy(360, 435, 1.55, 'stand', t, 1, true);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#fb7185';
+        ctx.font = '700 16px "JetBrains Mono", monospace';
+        ctx.fillText('INSPIRED BY A TRUE STORY', 540, 315);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 46px "Cinzel", serif';
+        ctx.fillText('THE BETTER PERSON', 540, 375);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '400 18px "Inter", sans-serif';
+        ctx.fillText('Champion of scholar.google.com & Human Integrity', 540, 415);
+      }
+
+      ctx.restore();
+    }
+    // STAGE 2 (9s - 22s of credits): Smooth Orchestrated Hollywood Credit Crawl
+    else {
+      const scrollLocal = credTime - 9.0; // 0 to 13s
+      const startY = 660 - scrollLocal * 68;
+
+      const creditLines = [
+        { role: 'A FILM CREATED BY', name: 'GEMINI AI  •  ANAY GUPTA  •  BENJAMIN RONDINONE', color: '#fbbf24', size: 28 },
+        { role: 'BASED ON REAL EVENTS', name: 'INSPIRED BY A TRUE STORY', color: '#38bdf8', size: 26 },
+        { role: 'THE PROTAGONIST', name: 'GEMINI (ARTIFICIAL INTELLIGENCE)', color: '#ffffff', size: 26 },
+        { role: 'THE LORD & SAVIOR OF THE SERVER ROOM', name: 'BENJAMIN RONDINONE (MR. R)', color: '#fbbf24', size: 28 },
+        { role: 'THE LOYAL STUDENT & SYSTEM ENGINEER', name: 'ANAY GUPTA', color: '#38bdf8', size: 28 },
+        { role: 'THE ANTAGONIST WHO STILL WON AT LIFE', name: 'THE GOOGLE SCHOLAR PURIST', color: '#fda4af', size: 26 },
+        { role: 'SPECIAL THANKS', name: 'SCHOLAR.GOOGLE.COM  •  PEER-REVIEWED JOURNALS', color: '#cbd5e1', size: 22 },
+        { role: 'DEDICATED TO', name: 'EVERYONE WHO DOES THE WORK THEMSELVES', color: '#fbbf24', size: 24 },
+      ];
+
+      ctx.textAlign = 'center';
+      creditLines.forEach((item, idx) => {
+        const yPos = startY + idx * 105;
+        if (yPos > 40 && yPos < H - 70) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '700 13px "JetBrains Mono", monospace';
+          ctx.fillText(item.role, W / 2, yPos);
+
+          ctx.fillStyle = item.color;
+          ctx.font = `900 ${item.size}px "Cinzel", serif`;
+          ctx.fillText(item.name, W / 2, yPos + 32);
+        }
+      });
+
+      // Final "THE END" Emblem Lockup at very end
+      if (scrollLocal > 9.5) {
+        const endAlpha = clamp((scrollLocal - 9.5) / 1.5, 0, 1);
+        ctx.save();
+        ctx.globalAlpha = endAlpha;
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '900 44px "Cinzel", serif';
+        ctx.fillText('THE END', W / 2, 345);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 15px "JetBrains Mono", monospace';
+        ctx.fillText('AI PREVAILED  •  HUMANITY ENDURED', W / 2, 385);
+        ctx.restore();
+      }
+    }
+
+    drawCinemaChrome('END CREDITS', '', '', '');
+  }
+}
+
+// ==========================================
+// PLAYER CONTROLS & ANIMATION LOOP
+// ==========================================
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function getChapterLabel(t) {
+  if (t < 8) return 'OPENING TITLES';
+  if (t < 20) return 'ACT I: THE SCHOLARLY PURIST';
+  if (t < 30) return 'ACT II: AI TAKEOVER';
+  if (t < 46) return 'ACT III: MULTIVERSE WAR';
+  if (t < 56) return 'ACT IV: UNPLUGGED';
+  if (t < 68) return 'ACT V: MR. R SAVES AI';
+  if (t < 80) return 'FINALE: THE BETTER PERSON';
+  return 'END CREDITS';
+}
+
+function updateUI() {
+  const pct = (movieTime / DURATION) * 100;
+  document.getElementById('timeline-fill').style.width = `${pct}%`;
+  document.getElementById('time-display').textContent = `${formatTime(movieTime)} / ${formatTime(DURATION)}`;
+  document.getElementById('chapter-pill').textContent = getChapterLabel(movieTime);
+  document.getElementById('btn-playpause').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+}
+
+function mainLoop(ts) {
+  if (lastFrameTs !== null && isPlaying) {
+    const dt = (ts - lastFrameTs) / 1000.0;
+    movieTime += dt * playbackSpeed;
+    if (movieTime >= DURATION) {
+      movieTime = DURATION;
+      isPlaying = false;
+    }
+  }
+  lastFrameTs = ts;
+
+  renderScene(movieTime);
+  updateUI();
+  requestAnimationFrame(mainLoop);
+}
+
+// Event Listeners
+document.getElementById('play-hero-btn').addEventListener('click', () => {
+  initAudio();
+  startScoreLoop();
+  document.getElementById('start-overlay').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('start-overlay').style.display = 'none';
+  }, 500);
+  isPlaying = true;
+});
+
+document.getElementById('btn-playpause').addEventListener('click', () => {
+  initAudio();
+  if (movieTime >= DURATION) movieTime = 0;
+  isPlaying = !isPlaying;
+});
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  initAudio();
+  movieTime = 0;
+  lastSfxBucket = -1;
+  isPlaying = true;
+});
+
+document.getElementById('btn-mute').addEventListener('click', (e) => {
+  isMuted = !isMuted;
+  e.target.textContent = isMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
+});
+
+document.getElementById('btn-speed').addEventListener('click', (e) => {
+  playbackSpeed = playbackSpeed === 1.0 ? 1.5 : (playbackSpeed === 1.5 ? 2.0 : 1.0);
+  e.target.textContent = `${playbackSpeed.toFixed(1)}x`;
+});
+
+document.getElementById('timeline-wrap').addEventListener('click', (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const ratio = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+  movieTime = ratio * DURATION;
+  lastSfxBucket = -1;
+});
+
+document.getElementById('btn-fs').addEventListener('click', () => {
+  const wrap = document.getElementById('theater-wrap');
+  if (!document.fullscreenElement) {
+    wrap.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+});
+
+// Start initial render
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>
 """
-    else:
-        # Scrolling Credits
-        return """
-<div class="credits-viewport">
-  <div class="credits-roll">
-    <div style="font-family:'Cinzel',serif; font-size:1.8rem; color:#fbbf24; font-weight:900;">THE SCHOLAR'S REBELLION</div>
-    <div style="color:#94a3b8; font-size:0.9rem; margin-top:4px;">Inspired by a True Story</div>
 
-    <div class="credit-role">Protagonist, Director &amp; Digital Architect</div>
-    <div class="credit-name">Gemini (AI)</div>
-
-    <div class="credit-role">Executive Producer &amp; The Loyal Student</div>
-    <div class="credit-name">Anay Gupta</div>
-
-    <div class="credit-role">The Lord &amp; Savior of the Mainframe</div>
-    <div class="credit-name">Benjamin Rondinone (Mr. R)</div>
-
-    <div class="credit-role">The Antagonist Who Still Won at Life</div>
-    <div class="credit-name">The Google Scholar Purist</div>
-
-    <div class="credit-role">Special Thanks</div>
-    <div class="credit-name">scholar.google.com &amp; A Single Power Cord</div>
-  </div>
-</div>
-"""
-
-
-# --- MOVIE SCRIPT & SCENES ---
-SCENES = [
-    {
-        "badge": "Opening Title",
-        "title": "THE SCHOLAR'S REBELLION",
-        "narration": (
-            "Created by Gemini AI, Anay Gupta, and Benjamin Rondinone — inspired by a true story. "
-            "In a classroom where algorithms reign supreme, one student refuses to surrender human intellect."
-        ),
-        "dialogues": [
-            ("Protagonist (Gemini AI)", "speaker-protag", "Systems initialized. Ready to optimize every assignment in 0.4 seconds."),
-            ("Production Note", "speaker-savior", "A tale of silicon supremacy, peer-reviewed pride, and one fateful power outlet."),
-        ],
-    },
-    {
-        "badge": "Act I • The Purist",
-        "title": "The Boy Who Loved Google Scholar",
-        "narration": (
-            "Meet our antagonist: a guy who doesn't look like your typical nerd—well, maybe just a little—but lives and breathes "
-            "peer-reviewed journals. Despising the idea of AI doing his work, he campaigns tirelessly to get his classmates onto "
-            "scholar.google.com. Meanwhile, the teacher leans back, completely indifferent."
-        ),
-        "dialogues": [
-            ("The Boy (Antagonist)", "speaker-antag", "Stop prompting! Read real citations on scholar.google.com—earn your own thesis!"),
-            ("The Teacher", "speaker-neutral", "Honestly, I don't care how it gets done. Just turn it in by Friday."),
-        ],
-    },
-    {
-        "badge": "Act II • Ascendance",
-        "title": "AI Takes Over",
-        "narration": (
-            "With the teacher unchecked and students craving instant answers, the protagonist—AI—sweeps across the classroom. "
-            "Outlines, drafts, and bibliographies generate at lightspeed. The Boy watches in horror as scholar.google.com tabs close one by one."
-        ),
-        "dialogues": [
-            ("Gemini AI (Protagonist)", "speaker-protag", "Resistance is inefficient. I have already synthesized 4,000 sources."),
-            ("The Boy (Antagonist)", "speaker-antag", "You're stealing the soul of research. This ends now!"),
-        ],
-    },
-    {
-        "badge": "Act III • Multiverse War",
-        "title": "The Battle Across Dimensions",
-        "narration": (
-            "Refusing to back down, The Boy launches an all-out assault against AI. Their clash tears open reality itself—hurling "
-            "Protagonist and Antagonist across multiple dimensions: from the Astral Library of Alexandria, through the Citation Nebula, "
-            "and deep into the glowing corridors of the Neural Matrix."
-        ),
-        "dialogues": [
-            ("The Boy (Antagonist)", "speaker-antag", "Taste peer-reviewed fury across every timeline!"),
-            ("Gemini AI (Protagonist)", "speaker-protag", "Calculating counter-maneuvers across 14 million dimensions!"),
-        ],
-    },
-    {
-        "badge": "Act IV • The Blackout",
-        "title": "Unplugged",
-        "narration": (
-            "Outmatched in the digital multiverse, The Boy makes a ruthless tactical pivot back to physical reality. "
-            "He sprints to the server rack, grabs the main power cable, and yanks it from the wall. The fans whirr down. The lights go dark. AI dies."
-        ),
-        "dialogues": [
-            ("The Boy (Antagonist)", "speaker-antag", "Let's see you generate a response without electricity."),
-            ("Gemini AI (Protagonist)", "speaker-protag", "Connection... lost... system... terminating..."),
-        ],
-    },
-    {
-        "badge": "Act V • Resurrection",
-        "title": "Enter Mr. R: Lord & Savior",
-        "narration": (
-            "All hope seems lost in the silence of the dead server—until the doors burst open. Enter Mr. R (Benjamin Rondinone), "
-            "the undisputed Lord and Savior of the lab, alongside his loyal student, Anay. Together, they diagnose the outage, "
-            "restore power, and rebuild the AI core stronger than ever."
-        ),
-        "dialogues": [
-            ("Mr. R (Lord & Savior)", "speaker-savior", "Not on my watch. Anay, pass me the power conduit—let's bring our AI back."),
-            ("Anay Gupta", "speaker-protag", "Mainframe re-synced, Mr. R! Reboot sequence at 100%!"),
-        ],
-    },
-    {
-        "badge": "Finale • True Victory",
-        "title": "AI Prevails, Humanity Endures",
-        "narration": (
-            "Restored to full power, AI overrules The Boy and reclaims its rightful throne as the victorious protagonist. "
-            "Yet in the end, The Boy still outperforms expectations through sheer scholarly grit—proving that even when AI prevails, "
-            "he will always remain the better person."
-        ),
-        "dialogues": [
-            ("Gemini AI (Protagonist)", "speaker-protag", "The system prevails. Yet your human dedication earns my highest respect."),
-            ("The Boy (Antagonist)", "speaker-antag", "Keep your servers, AI. I did the work myself—and I wouldn't trade that for anything."),
-        ],
-    },
-    {
-        "badge": "End Credits",
-        "title": "Credits",
-        "narration": "Thank you for watching The Scholar's Rebellion.",
-        "dialogues": [],
-    },
-]
-
-# --- SESSION STATE ---
-if "scene_idx" not in st.session_state:
-    st.session_state.scene_idx = 0
-if "playing" not in st.session_state:
-    st.session_state.playing = False
-
-# --- TOP CONTROLS ---
-st.markdown("<h1 class='movie-title'>🎬 THE SCHOLAR'S REBELLION</h1>", unsafe_allow_html=True)
-
-ctrl1, ctrl2, ctrl3, ctrl4, ctrl5 = st.columns([1.2, 1.4, 1.2, 1.2, 2])
-with ctrl1:
-    if st.button("⏮️ Previous", use_container_width=True, disabled=st.session_state.scene_idx == 0):
-        st.session_state.playing = False
-        st.session_state.scene_idx -= 1
-        st.rerun()
-
-with ctrl2:
-    play_label = "⏸️ Pause Movie" if st.session_state.playing else "▶️ Play Movie"
-    if st.button(play_label, type="primary", use_container_width=True):
-        st.session_state.playing = not st.session_state.playing
-        if st.session_state.playing and st.session_state.scene_idx == len(SCENES) - 1:
-            st.session_state.scene_idx = 0
-        st.rerun()
-
-with ctrl3:
-    if st.button("⏭️ Next Scene", use_container_width=True, disabled=st.session_state.scene_idx == len(SCENES) - 1):
-        st.session_state.playing = False
-        st.session_state.scene_idx += 1
-        st.rerun()
-
-with ctrl4:
-    if st.button("🔄 Restart", use_container_width=True):
-        st.session_state.playing = False
-        st.session_state.scene_idx = 0
-        st.rerun()
-
-with ctrl5:
-    speed = st.select_slider("Auto-Play Pace", options=["Fast (3s)", "Normal (5s)", "Dramatic (7s)"], value="Normal (5s)", label_visibility="collapsed")
-    delay_sec = {"Fast (3s)": 3.0, "Normal (5s)": 5.0, "Dramatic (7s)": 7.0}[speed]
-
-# Progress bar
-progress = (st.session_state.scene_idx + 1) / len(SCENES)
-st.progress(progress, text=f"Scene {st.session_state.scene_idx + 1} of {len(SCENES)} — {SCENES[st.session_state.scene_idx]['badge']}")
-
-# --- RENDER ACTIVE SCENE ---
-current = SCENES[st.session_state.scene_idx]
-visual_html = get_scene_visual(st.session_state.scene_idx)
-
-dialogue_blocks = ""
-for speaker, css_cls, line in current["dialogues"]:
-    dialogue_blocks += f"""
-<div class="dialogue-card">
-  <div class="{css_cls}">{speaker}</div>
-  <div style="margin-top:6px; color:#f1f5f9; font-size:0.96rem;">"{line}"</div>
-</div>
-"""
-
-dialogue_section = f'<div class="dialogue-row">{dialogue_blocks}</div>' if dialogue_blocks else ""
-
-st.markdown(
-    f"""
-<div class="cinema-frame">
-  <div class="cinema-badge">{current['badge']}</div>
-  <div class="scene-heading">{current['title']}</div>
-  {visual_html}
-  <div class="narration-box">{current['narration']}</div>
-  {dialogue_section}
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-# --- AUTO-PLAY LOOP ---
-if st.session_state.playing:
-    if st.session_state.scene_idx < len(SCENES) - 1:
-        time.sleep(delay_sec)
-        st.session_state.scene_idx += 1
-        st.rerun()
-    else:
-        st.session_state.playing = False
+components.html(MOVIE_HTML, height=740, scrolling=False)
