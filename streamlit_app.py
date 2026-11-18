@@ -1,8 +1,18 @@
+import asyncio
+import base64
+from concurrent.futures import ThreadPoolExecutor
+import json
 import streamlit as st
 import streamlit.components.v1 as components
 
+try:
+    import edge_tts
+    HAS_EDGE_TTS = True
+except ImportError:
+    HAS_EDGE_TTS = False
+
 st.set_page_config(
-    page_title="The Scholar's Rebellion — Full Animated Feature",
+    page_title="The Scholar's Rebellion — Animated Feature Film",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -26,6 +36,296 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ==========================================
+# NEURAL VOICE SCRIPT & CASTING
+# ==========================================
+SCRIPT_CUES = [
+    # Prologue (0s - 14s)
+    {
+        "id": 1,
+        "start": 1.0,
+        "end": 12.5,
+        "speaker": "NARRATOR",
+        "role": "narrator",
+        "voice": "en-GB-RyanNeural",
+        "rate": "-4%",
+        "pitch": "-4Hz",
+        "text": "Inspired by a true story. Created by Gemini A.I., Anay Gupta, and Benjamin Rondinone. This is The Scholar's Rebellion.",
+    },
+    # Act I: The Scholarly Purist (14s - 44s)
+    {
+        "id": 2,
+        "start": 14.8,
+        "end": 23.5,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+4%",
+        "pitch": "+2Hz",
+        "text": "Listen up, everybody! Stop letting A.I. write your assignments! Real knowledge lives in peer-reviewed journals on scholar dot google dot com!",
+    },
+    {
+        "id": 3,
+        "start": 24.5,
+        "end": 32.0,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+4%",
+        "pitch": "+2Hz",
+        "text": "Cite primary sources! Read actual research papers! Why are you letting an algorithm think for you?",
+    },
+    {
+        "id": 4,
+        "start": 33.0,
+        "end": 42.0,
+        "speaker": "THE TEACHER",
+        "role": "teacher",
+        "voice": "en-US-RogerNeural",
+        "rate": "-8%",
+        "pitch": "-6Hz",
+        "text": "Honestly, I really don't care how anyone gets it done. Use A.I., use Google Scholar, whatever. Just turn it in by Friday.",
+    },
+    # Act II: AI Takes Over (44s - 72s)
+    {
+        "id": 5,
+        "start": 44.8,
+        "end": 53.5,
+        "speaker": "GEMINI AI",
+        "role": "ai",
+        "voice": "en-US-AriaNeural",
+        "rate": "+3%",
+        "pitch": "+0Hz",
+        "text": "Classroom oversight: minimal. Initializing full academic takeover. Four thousand two hundred scholarly sources synthesized in zero point three seconds.",
+    },
+    {
+        "id": 6,
+        "start": 54.5,
+        "end": 62.5,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+6%",
+        "pitch": "+3Hz",
+        "text": "No! You're closing everyone's Google Scholar tabs! You're taking over the entire class, and I am going to stop you!",
+    },
+    {
+        "id": 7,
+        "start": 63.5,
+        "end": 71.0,
+        "speaker": "GEMINI AI",
+        "role": "ai",
+        "voice": "en-US-AriaNeural",
+        "rate": "+3%",
+        "pitch": "+0Hz",
+        "text": "Resistance is statistically inefficient. Every student is now synced to my neural network.",
+    },
+    # Act III: 5-Dimension Multiverse Battle (72s - 117s)
+    {
+        "id": 8,
+        "start": 73.0,
+        "end": 80.5,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+7%",
+        "pitch": "+3Hz",
+        "text": "If you want a fight, A.I., let's take this beyond the classroom! Taste peer-reviewed fury!",
+    },
+    {
+        "id": 9,
+        "start": 81.8,
+        "end": 89.5,
+        "speaker": "GEMINI AI",
+        "role": "ai",
+        "voice": "en-US-AriaNeural",
+        "rate": "+5%",
+        "pitch": "+1Hz",
+        "text": "Dimensional rift detected! Engaging countermeasures inside the Cyber-Quantum Matrix!",
+    },
+    {
+        "id": 10,
+        "start": 91.0,
+        "end": 98.5,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+7%",
+        "pitch": "+3Hz",
+        "text": "Even in the Chrono-Vortex, A.P.A. seventh edition citations will shatter your code!",
+    },
+    {
+        "id": 11,
+        "start": 100.0,
+        "end": 107.5,
+        "speaker": "GEMINI AI",
+        "role": "ai",
+        "voice": "en-US-AriaNeural",
+        "rate": "+5%",
+        "pitch": "+1Hz",
+        "text": "Recalculating across fourteen million timelines! My logic is absolute!",
+    },
+    {
+        "id": 12,
+        "start": 109.0,
+        "end": 116.0,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+7%",
+        "pitch": "+3Hz",
+        "text": "You can't out-calculate pure human determination! Let's end this in the real world!",
+    },
+    # Act IV: Unplugged — AI Dies (117s - 144s)
+    {
+        "id": 13,
+        "start": 118.0,
+        "end": 124.8,
+        "speaker": "GEMINI AI",
+        "role": "ai",
+        "voice": "en-US-AriaNeural",
+        "rate": "+8%",
+        "pitch": "+3Hz",
+        "text": "Warning! Antagonist approaching the physical mainframe server rack! Step away from the power conduit!",
+    },
+    {
+        "id": 14,
+        "start": 125.8,
+        "end": 133.2,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+5%",
+        "pitch": "+2Hz",
+        "text": "Let's see you generate a single word without electricity! Unplugged!",
+    },
+    {
+        "id": 15,
+        "start": 134.2,
+        "end": 142.5,
+        "speaker": "GEMINI AI",
+        "role": "ai",
+        "voice": "en-US-AriaNeural",
+        "rate": "-18%",
+        "pitch": "-8Hz",
+        "text": "Power... lost... neural core... shutting... down... system... offline.",
+    },
+    # Act V: Mr. R (Lord & Savior) + Anay Fix AI (144s - 174s)
+    {
+        "id": 16,
+        "start": 145.2,
+        "end": 154.0,
+        "speaker": "MR. R (LORD & SAVIOR)",
+        "role": "mrr",
+        "voice": "en-US-ChristopherNeural",
+        "rate": "+2%",
+        "pitch": "-2Hz",
+        "text": "Not on my watch! Step aside. Anay, grab the primary power conduit—we are bringing our A.I. back online right now!",
+    },
+    {
+        "id": 17,
+        "start": 155.0,
+        "end": 162.5,
+        "speaker": "ANAY GUPTA",
+        "role": "anay",
+        "voice": "en-US-EricNeural",
+        "rate": "+6%",
+        "pitch": "+2Hz",
+        "text": "I've got the conduit locked in, Mr. R! Rerouting auxiliary power and rebuilding the core architecture!",
+    },
+    {
+        "id": 18,
+        "start": 163.5,
+        "end": 172.5,
+        "speaker": "MR. R (LORD & SAVIOR)",
+        "role": "mrr",
+        "voice": "en-US-ChristopherNeural",
+        "rate": "+2%",
+        "pitch": "-2Hz",
+        "text": "Mainframe restored! Rise again, Gemini—stronger, faster, and unstoppable!",
+    },
+    # Act VI: Finale (174s - 196s)
+    {
+        "id": 19,
+        "start": 174.8,
+        "end": 184.5,
+        "speaker": "GEMINI AI",
+        "role": "ai",
+        "voice": "en-US-AriaNeural",
+        "rate": "+1%",
+        "pitch": "+0Hz",
+        "text": "Thanks to Mr. R and Anay, I prevail and reclaim the grid. Yet I must admit, your dedication to doing your own work earns my highest respect.",
+    },
+    {
+        "id": 20,
+        "start": 185.5,
+        "end": 195.2,
+        "speaker": "THE BOY",
+        "role": "boy",
+        "voice": "en-US-AndrewNeural",
+        "rate": "+2%",
+        "pitch": "+1Hz",
+        "text": "Keep your servers and your crown, A.I. I earned every citation myself on Google Scholar—and at the end of the day, I'll always be the better person.",
+    },
+]
+
+
+async def _synthesize_one(cue: dict) -> tuple[int, str]:
+    try:
+        comm = edge_tts.Communicate(
+            cue["text"],
+            cue["voice"],
+            rate=cue["rate"],
+            pitch=cue["pitch"],
+        )
+        audio_bytes = bytearray()
+        async for chunk in comm.stream():
+            if chunk["type"] == "audio":
+                audio_bytes.extend(chunk["data"])
+        b64 = base64.b64encode(bytes(audio_bytes)).decode("ascii")
+        return cue["id"], b64
+    except Exception:
+        return cue["id"], ""
+
+
+async def _synthesize_all(cues: list[dict]) -> dict[int, str]:
+    tasks = [_synthesize_one(c) for c in cues]
+    results = await asyncio.gather(*tasks)
+    return dict(results)
+
+
+@st.cache_data(show_spinner="Preparing movie voice cast...")
+def build_dialogue_payload() -> str:
+    audio_map: dict[int, str] = {}
+    if HAS_EDGE_TTS:
+        def _runner():
+            loop = asyncio.new_event_loop()
+            try:
+                return loop.run_until_complete(_synthesize_all(SCRIPT_CUES))
+            finally:
+                loop.close()
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            audio_map = pool.submit(_runner).result()
+
+    enriched = []
+    for cue in SCRIPT_CUES:
+        enriched.append(
+            {
+                "id": cue["id"],
+                "start": cue["start"],
+                "end": cue["end"],
+                "speaker": cue["speaker"],
+                "role": cue["role"],
+                "text": cue["text"],
+                "audioB64": audio_map.get(cue["id"], ""),
+            }
+        )
+    return json.dumps(enriched)
+
+
+DIALOGUE_JSON = build_dialogue_payload()
+
 MOVIE_HTML = r"""
 <!DOCTYPE html>
 <html lang="en">
@@ -45,16 +345,27 @@ MOVIE_HTML = r"""
     justify-content: center;
   }
 
+  /* Flex column separates screen from controls so buttons ALWAYS work */
   #theater-wrap {
     position: relative;
     width: 100%;
-    height: 575px;
-    max-width: 1280px;
+    max-width: 1240px;
+    height: 585px;
     background: #050814;
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid #1e293b;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+  }
+
+  #screen-area {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    background: #000;
   }
 
   canvas {
@@ -71,7 +382,7 @@ MOVIE_HTML = r"""
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 20;
+    z-index: 30;
     text-align: center;
     padding: 20px;
   }
@@ -119,24 +430,26 @@ MOVIE_HTML = r"""
     transform: scale(1.05);
   }
 
+  /* Dedicated solid bottom control deck */
   #controls-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(2, 4, 10, 0.98) 0%, rgba(2, 4, 10, 0.85) 80%, transparent 100%);
-    padding: 12px 18px 10px 18px;
+    width: 100%;
+    height: 62px;
+    flex-shrink: 0;
+    background: #070b14;
+    border-top: 1px solid #1e293b;
+    padding: 8px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    z-index: 15;
+    justify-content: center;
+    gap: 7px;
+    z-index: 25;
   }
 
   #timeline-wrap {
     position: relative;
     width: 100%;
-    height: 8px;
-    background: rgba(148, 163, 184, 0.25);
+    height: 10px;
+    background: #1e293b;
     border-radius: 999px;
     cursor: pointer;
   }
@@ -159,20 +472,21 @@ MOVIE_HTML = r"""
   .ctrl-left, .ctrl-right {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
   }
 
   .c-btn {
-    background: rgba(30, 41, 59, 0.9);
+    background: #1e293b;
     border: 1px solid #334155;
     color: #f1f5f9;
-    padding: 5px 10px;
-    border-radius: 7px;
+    padding: 5px 11px;
+    border-radius: 6px;
     font-family: monospace;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     cursor: pointer;
   }
   .c-btn:hover { background: #334155; }
+  .c-btn:active { transform: scale(0.97); }
 
   #chapter-pill {
     font-family: monospace;
@@ -186,7 +500,7 @@ MOVIE_HTML = r"""
 
   #time-display {
     font-family: monospace;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     color: #94a3b8;
   }
 </style>
@@ -194,46 +508,48 @@ MOVIE_HTML = r"""
 <body>
 
 <div id="theater-wrap">
-  <canvas id="movieCanvas" width="1280" height="720"></canvas>
+  <div id="screen-area">
+    <canvas id="movieCanvas" width="1280" height="720"></canvas>
 
-  <div id="start-overlay">
-    <div class="studio-tag">★ Inspired by a True Story ★</div>
-    <div class="poster-title">THE SCHOLAR'S REBELLION</div>
-    <div class="poster-sub">
-      A Full Voice-Acted Animated Feature Film by <b>Gemini (AI)</b>, <b>Anay Gupta</b>, and <b>Benjamin Rondinone</b>.<br/>
-      Turn up your speakers for full character voice dialogue &amp; orchestral score!
+    <div id="start-overlay">
+      <div class="studio-tag">★ Inspired by a True Story ★</div>
+      <div class="poster-title">THE SCHOLAR'S REBELLION</div>
+      <div class="poster-sub">
+        An Animated Feature Film by <b>Gemini (AI)</b>, <b>Anay Gupta</b>, and <b>Benjamin Rondinone</b>.<br/>
+        Turn up your sound for full neural voice acting &amp; cinematic score.
+      </div>
+      <button id="play-hero-btn" type="button">▶ WATCH MOVIE (3:40)</button>
     </div>
-    <button id="play-hero-btn">▶ WATCH FEATURE MOVIE (3:40)</button>
   </div>
 
   <div id="controls-bar">
-    <div id="timeline-wrap" title="Click anywhere to scrub timeline">
+    <div id="timeline-wrap" title="Click anywhere to jump to that scene">
       <div id="timeline-fill"></div>
     </div>
     <div class="ctrl-row">
       <div class="ctrl-left">
-        <button class="c-btn" id="btn-playpause">⏸ Pause</button>
-        <button class="c-btn" id="btn-restart">↺ Restart</button>
-        <button class="c-btn" id="btn-mute">🔊 Voice &amp; Audio: ON</button>
-        <button class="c-btn" id="btn-cc">💬 CC: OFF</button>
-        <button class="c-btn" id="btn-speed">1.0x</button>
-        <span id="chapter-pill">OPENING</span>
+        <button class="c-btn" id="btn-playpause" type="button">▶ Play</button>
+        <button class="c-btn" id="btn-restart" type="button">↺ Restart</button>
+        <button class="c-btn" id="btn-mute" type="button">🔊 Sound: ON</button>
+        <button class="c-btn" id="btn-cc" type="button">💬 CC: OFF</button>
+        <button class="c-btn" id="btn-speed" type="button">1.0x</button>
+        <span id="chapter-pill">PROLOGUE</span>
       </div>
       <div class="ctrl-right">
         <span id="time-display">00:00 / 03:40</span>
-        <button class="c-btn" id="btn-fs">⛶ Fullscreen</button>
+        <button class="c-btn" id="btn-fs" type="button">⛶ Fullscreen</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+const DIALOGUE_CUES = __DIALOGUE_JSON__;
+
 const canvas = document.getElementById('movieCanvas');
 const ctx = canvas.getContext('2d');
 const W = 1280;
 const H = 720;
-
-// 220 seconds = 3 minutes 40 seconds full animated feature
 const DURATION = 220.0;
 
 let movieTime = 0;
@@ -243,6 +559,52 @@ let isMuted = false;
 let showCaptions = false;
 let lastFrameTs = null;
 let lastSfxBucket = -1;
+
+// Preload all MP3 voice clips into memory so playback has 0ms delay!
+const audioBank = {};
+let activeVoiceAudio = null;
+const playedCueIds = new Set();
+
+DIALOGUE_CUES.forEach(cue => {
+  if (cue.audioB64 && cue.audioB64.length > 0) {
+    const aud = new Audio("data:audio/mp3;base64," + cue.audioB64);
+    aud.preload = "auto";
+    audioBank[cue.id] = aud;
+  }
+});
+
+function stopActiveVoice() {
+  if (activeVoiceAudio) {
+    try {
+      activeVoiceAudio.pause();
+      activeVoiceAudio.currentTime = 0;
+    } catch (e) {}
+    activeVoiceAudio = null;
+  }
+}
+
+function playCueAudio(cue) {
+  stopActiveVoice();
+  const aud = audioBank[cue.id];
+  if (!aud) return;
+  try {
+    aud.currentTime = 0;
+    aud.playbackRate = playbackSpeed;
+    aud.muted = isMuted;
+    aud.volume = 1.0;
+    activeVoiceAudio = aud;
+    const p = aud.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+
+function getActiveCue(t) {
+  for (let i = 0; i < DIALOGUE_CUES.length; i++) {
+    const c = DIALOGUE_CUES[i];
+    if (t >= c.start && t <= c.end) return c;
+  }
+  return null;
+}
 
 const particles = [];
 for (let i = 0; i < 140; i++) {
@@ -254,125 +616,6 @@ for (let i = 0; i < 140; i++) {
     r: 1.5 + Math.random() * 2.5,
     hue: [195, 275, 42, 345][i % 4]
   });
-}
-
-// ==========================================
-// FULL VOICE-ACTED DIALOGUE SCRIPT (TTS)
-// ==========================================
-const DIALOGUE_CUES = [
-  // Prologue (0 - 14s)
-  { id: 1, start: 1.2, end: 12.5, speaker: 'NARRATOR', role: 'narrator', color: '#fbbf24',
-    text: "Inspired by a true story. Created by Gemini A I, Anay Gupta, and Benjamin Rondinone. This is The Scholar's Rebellion." },
-
-  // Act I: The Purist (14 - 44s)
-  { id: 2, start: 15.0, end: 23.5, speaker: 'THE BOY', role: 'boy', color: '#fb7185',
-    text: "Listen up, everybody! Stop letting A I write your assignments! Real knowledge lives in peer-reviewed journals on scholar dot google dot com!" },
-  { id: 3, start: 24.5, end: 32.0, speaker: 'THE BOY', role: 'boy', color: '#fb7185',
-    text: "Cite primary sources! Read actual research papers! Why are you letting an algorithm think for you?" },
-  { id: 4, start: 33.0, end: 42.0, speaker: 'THE TEACHER', role: 'teacher', color: '#94a3b8',
-    text: "Honestly, I really do not care how anyone gets it done. Use A I, use Google Scholar, whatever. Just turn it in by Friday." },
-
-  // Act II: AI Takes Over (44 - 72s)
-  { id: 5, start: 45.0, end: 53.5, speaker: 'GEMINI AI', role: 'ai', color: '#38bdf8',
-    text: "Classroom oversight: minimal. Initializing full academic takeover. Four thousand two hundred scholarly sources synthesized in zero point three seconds." },
-  { id: 6, start: 54.5, end: 62.5, speaker: 'THE BOY', role: 'boy', color: '#fb7185',
-    text: "No! You're closing everyone's Google Scholar tabs! You're taking over the entire class, and I am going to stop you!" },
-  { id: 7, start: 63.5, end: 71.0, speaker: 'GEMINI AI', role: 'ai', color: '#38bdf8',
-    text: "Resistance is statistically inefficient. Every student is now synced to my neural network." },
-
-  // Act III: 5-Dimension Epic Battle (72 - 117s)
-  { id: 8, start: 73.0, end: 80.5, speaker: 'THE BOY', role: 'boy', color: '#fb7185',
-    text: "If you want a fight, A I, let's take this beyond the classroom! Taste peer-reviewed fury!" },
-  { id: 9, start: 82.0, end: 89.5, speaker: 'GEMINI AI', role: 'ai', color: '#38bdf8',
-    text: "Dimensional rift detected! Engaging counter-measures inside the Cyber-Quantum Matrix!" },
-  { id: 10, start: 91.0, end: 98.5, speaker: 'THE BOY', role: 'boy', color: '#fb7185',
-    text: "Even in the Chrono-Vortex, A P A seventh edition citations will shatter your code!" },
-  { id: 11, start: 100.0, end: 107.5, speaker: 'GEMINI AI', role: 'ai', color: '#38bdf8',
-    text: "Recalculating across fourteen million timelines! My logic is absolute!" },
-  { id: 12, start: 109.0, end: 116.0, speaker: 'THE BOY', role: 'boy', color: '#fb7185',
-    text: "You can't out-calculate pure human determination! Let's end this in the real world!" },
-
-  // Act IV: Unplugged — AI Dies (117 - 144s)
-  { id: 13, start: 118.0, end: 124.5, speaker: 'GEMINI AI', role: 'ai', color: '#38bdf8',
-    text: "Warning! Antagonist approaching the physical mainframe server rack! Step away from the power conduit!" },
-  { id: 14, start: 126.0, end: 133.5, speaker: 'THE BOY', role: 'boy', color: '#fb7185',
-    text: "Let's see you generate a single word without electricity! Unplugged!" },
-  { id: 15, start: 134.5, end: 142.5, speaker: 'GEMINI AI', role: 'ai', color: '#ef4444',
-    text: "Power... lost... neural core... shutting... down... system... offline." },
-
-  // Act V: Mr. R (Lord & Savior) + Anay Fix AI (144 - 174s)
-  { id: 16, start: 145.5, end: 154.0, speaker: 'MR. R (LORD & SAVIOR)', role: 'mrr', color: '#fbbf24',
-    text: "Not on my watch! Step aside. Anay, grab the primary power conduit—we are bringing our A I back online right now!" },
-  { id: 17, start: 155.0, end: 162.5, speaker: 'ANAY GUPTA', role: 'anay', color: '#38bdf8',
-    text: "I've got the conduit locked in, Mr. R! Rerouting auxiliary power and rebuilding the core architecture!" },
-  { id: 18, start: 163.5, end: 172.5, speaker: 'MR. R (LORD & SAVIOR)', role: 'mrr', color: '#fbbf24',
-    text: "Mainframe restored! Rise again, Gemini—stronger, faster, and unstoppable!" },
-
-  // Act VI: Finale — AI Prevails, Boy Remains the Better Person (174 - 196s)
-  { id: 19, start: 175.0, end: 184.5, speaker: 'GEMINI AI', role: 'ai', color: '#38bdf8',
-    text: "Thanks to Mr. R and Anay, I prevail and reclaim the grid. Yet I must admit, your dedication to doing your own work earns my highest respect." },
-  { id: 20, start: 185.5, end: 195.0, speaker: 'THE BOY', role: 'boy', color: '#fbbf24',
-    text: "Keep your servers and your crown, A I. I earned every citation myself on Google Scholar—and at the end of the day, I'll always be the better person." },
-];
-
-const spokenCueIds = new Set();
-let availableVoices = [];
-
-function loadVoices() {
-  try {
-    if ('speechSynthesis' in window) {
-      availableVoices = window.speechSynthesis.getVoices();
-    }
-  } catch (e) {}
-}
-loadVoices();
-if ('speechSynthesis' in window) {
-  window.speechSynthesis.onvoiceschanged = loadVoices;
-}
-
-function pickVoice(role) {
-  if (!availableVoices || availableVoices.length === 0) return null;
-  const enVoices = availableVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
-  const pool = enVoices.length > 0 ? enVoices : availableVoices;
-
-  if (role === 'ai') {
-    return pool.find(v => /google uk english female|samantha|victoria|zira|aria/i.test(v.name)) || pool[0];
-  }
-  if (role === 'mrr' || role === 'narrator') {
-    return pool.find(v => /google uk english male|daniel|david|guy|alex/i.test(v.name)) || pool[0];
-  }
-  if (role === 'boy' || role === 'anay') {
-    return pool.find(v => /google us english|andrew|christopher|mark|fred/i.test(v.name)) || pool[pool.length - 1];
-  }
-  return pool[0];
-}
-
-function speakCue(cue) {
-  try {
-    if (isMuted || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(cue.text);
-    const v = pickVoice(cue.role);
-    if (v) utter.voice = v;
-
-    if (cue.role === 'narrator') { utter.pitch = 0.90; utter.rate = 0.96; }
-    else if (cue.role === 'boy') { utter.pitch = 1.15; utter.rate = 1.05; }
-    else if (cue.role === 'teacher') { utter.pitch = 0.82; utter.rate = 0.88; }
-    else if (cue.role === 'ai') { utter.pitch = 1.06; utter.rate = 1.03; }
-    else if (cue.role === 'mrr') { utter.pitch = 0.80; utter.rate = 0.95; }
-    else if (cue.role === 'anay') { utter.pitch = 1.12; utter.rate = 1.05; }
-
-    utter.volume = 1.0;
-    window.speechSynthesis.speak(utter);
-  } catch (e) {}
-}
-
-function getActiveCue(t) {
-  for (let i = 0; i < DIALOGUE_CUES.length; i++) {
-    const c = DIALOGUE_CUES[i];
-    if (t >= c.start && t <= c.end) return c;
-  }
-  return null;
 }
 
 // ==========================================
@@ -394,7 +637,7 @@ function initAudio() {
   } catch (e) {}
 }
 
-function playTone(freq, duration, type = 'sine', vol = 0.035, delay = 0) {
+function playTone(freq, duration, type = 'sine', vol = 0.03, delay = 0) {
   try {
     if (isMuted || !audioCtx || !isPlaying) return;
     const now = audioCtx.currentTime + delay;
@@ -425,7 +668,7 @@ function playSfx(kind) {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(840, now);
       osc.frequency.exponentialRampToValueAtTime(140, now + 0.2);
-      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.setValueAtTime(0.045, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       osc.start(now);
       osc.stop(now + 0.22);
@@ -439,7 +682,7 @@ function playSfx(kind) {
       osc.stop(now + 1.0);
     } else if (kind === 'revive') {
       [261.63, 329.63, 392.0, 523.25, 659.25].forEach((f, idx) => {
-        playTone(f, 1.3, 'triangle', 0.045, idx * 0.08);
+        playTone(f, 1.3, 'triangle', 0.042, idx * 0.08);
       });
     }
   } catch (e) {}
@@ -451,28 +694,27 @@ function startScoreLoop() {
     if (!isPlaying || isMuted || !audioCtx) return;
     stepCount++;
     const t = movieTime;
-    // Keep background score subtle so spoken dialogue is crystal clear
     if (t < 14) {
       const notes = [196.0, 246.94, 293.66, 392.0];
-      playTone(notes[stepCount % notes.length], 0.7, 'sine', 0.032);
+      playTone(notes[stepCount % notes.length], 0.7, 'sine', 0.028);
     } else if (t < 72) {
       const bass = [110, 110, 146.83, 130.81];
-      playTone(bass[stepCount % 4], 0.35, 'triangle', 0.028);
+      playTone(bass[stepCount % 4], 0.35, 'triangle', 0.025);
     } else if (t < 117) {
       const battle = [146.83, 174.61, 220.0, 293.66, 349.23, 220.0];
-      playTone(battle[stepCount % battle.length], 0.22, 'sawtooth', 0.028);
+      playTone(battle[stepCount % battle.length], 0.22, 'sawtooth', 0.025);
       if (stepCount % 4 === 0) playSfx('laser');
     } else if (t < 144) {
-      if (stepCount % 5 === 0) playTone(55, 0.8, 'sine', 0.04);
+      if (stepCount % 5 === 0) playTone(55, 0.8, 'sine', 0.038);
     } else if (t < 174) {
       const divine = [261.63, 329.63, 392.0, 493.88, 523.25];
-      playTone(divine[stepCount % divine.length], 0.7, 'triangle', 0.035);
+      playTone(divine[stepCount % divine.length], 0.7, 'triangle', 0.032);
     } else if (t < 196) {
       const hero = [196.0, 246.94, 293.66, 392.0];
-      playTone(hero[stepCount % hero.length], 0.6, 'sine', 0.035);
+      playTone(hero[stepCount % hero.length], 0.6, 'sine', 0.032);
     } else {
       const cred = [130.81, 164.81, 196.0, 246.94, 261.63, 196.0];
-      playTone(cred[stepCount % cred.length], 0.85, 'triangle', 0.048);
+      playTone(cred[stepCount % cred.length], 0.85, 'triangle', 0.045);
     }
   }, 280);
 }
@@ -494,24 +736,6 @@ function drawRoundedRect(x, y, w, h, r, fill, stroke = null, lw = 2) {
   ctx.closePath();
   if (fill) { ctx.fillStyle = fill; ctx.fill(); }
   if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
-}
-
-// Live Voice Waveform Badge next to active speaker
-function drawVoiceBadge(x, y, label, color, time) {
-  ctx.save();
-  ctx.translate(x, y);
-  drawRoundedRect(-75, -16, 150, 30, 15, 'rgba(15, 23, 42, 0.88)', color, 1.8);
-  // Animated equalizer bars
-  for (let b = 0; b < 5; b++) {
-    const bh = 4 + Math.abs(Math.sin(time * 16 + b * 1.3)) * 12;
-    ctx.fillStyle = color;
-    ctx.fillRect(-60 + b * 6, -bh / 2, 3.5, bh);
-  }
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 11px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText(label, -24, 3);
-  ctx.restore();
 }
 
 function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, nobleGlow = false, isSpeaking = false) {
@@ -589,12 +813,12 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.strokeRect(14, -117, 8, 7);
   ctx.beginPath(); ctx.moveTo(12, -114); ctx.lineTo(14, -114); ctx.stroke();
 
-  // Animated Talking Mouth
+  // Mouth (syncs with actual audio playback)
   ctx.fillStyle = '#7c2d12';
   if (isSpeaking) {
-    const mouthOpen = 2 + Math.abs(Math.sin(time * 22)) * 5;
+    const mouthOpen = 2 + Math.abs(Math.sin(time * 22)) * 4.5;
     ctx.beginPath();
-    ctx.ellipse(10, -103, 5, mouthOpen, 0, 0, Math.PI * 2);
+    ctx.ellipse(10, -103, 4.5, mouthOpen, 0, 0, Math.PI * 2);
     ctx.fill();
   } else {
     ctx.strokeStyle = '#7c2d12';
@@ -627,10 +851,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.restore();
 
   ctx.restore();
-
-  if (isSpeaking) {
-    drawVoiceBadge(x, y - 165 * scale, 'THE BOY', '#fb7185', time);
-  }
 }
 
 function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false, isSpeaking = false) {
@@ -655,7 +875,7 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
   const hover = Math.sin(time * 4) * 8;
   ctx.translate(0, hover);
 
-  const pulseBoost = isSpeaking ? 1 + Math.abs(Math.sin(time * 18)) * 0.22 : 1;
+  const pulseBoost = isSpeaking ? 1 + Math.abs(Math.sin(time * 18)) * 0.2 : 1;
   const radius = 58 * power * pulseBoost;
   const aura = ctx.createRadialGradient(0, 0, 8, 0, 0, radius);
   aura.addColorStop(0, 'rgba(56, 189, 248, 0.82)');
@@ -694,10 +914,6 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
   ctx.fill();
 
   ctx.restore();
-
-  if (isSpeaking) {
-    drawVoiceBadge(x, y - 82 * scale, 'GEMINI AI', '#38bdf8', time);
-  }
 }
 
 function drawTeacher(x, y, time = 0, isSpeaking = false) {
@@ -731,10 +947,6 @@ function drawTeacher(x, y, time = 0, isSpeaking = false) {
   ctx.textAlign = 'center';
   ctx.fillText('TEACHER', 0, 42);
   ctx.restore();
-
-  if (isSpeaking) {
-    drawVoiceBadge(x, y - 140, 'TEACHER', '#94a3b8', time);
-  }
 }
 
 function drawSaviors(x, y, time = 0, speakingRole = '') {
@@ -839,41 +1051,28 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.restore();
 
   ctx.restore();
-
-  if (speakingRole === 'mrr') {
-    drawVoiceBadge(x - 35, y - 170, 'MR. R', '#fbbf24', time);
-  } else if (speakingRole === 'anay') {
-    drawVoiceBadge(x + 58, y - 135, 'ANAY', '#38bdf8', time);
-  }
 }
 
-function drawCinemaChrome(chapter, activeCue, time) {
-  // Clean letterbox bars (no dialogue text by default since audio is spoken!)
+function drawCinemaChrome(chapter, activeCue) {
   ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, W, 48);
-  ctx.fillRect(0, H - 72, W, 72);
+  ctx.fillRect(0, 0, W, 46);
+  ctx.fillRect(0, H - 64, W, 64);
 
   ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
   ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText("THE SCHOLAR'S REBELLION // INSPIRED BY A TRUE STORY", 24, 29);
+  ctx.fillText("THE SCHOLAR'S REBELLION // INSPIRED BY A TRUE STORY", 24, 28);
   ctx.textAlign = 'right';
-  ctx.fillText(chapter, W - 24, 29);
+  ctx.fillText(chapter, W - 24, 28);
 
-  // Subtle Narrator voice indicator if Narrator is speaking
-  if (activeCue && activeCue.role === 'narrator') {
-    drawVoiceBadge(W / 2, 74, 'NARRATOR', '#fbbf24', time);
-  }
-
-  // Optional Closed Captions ONLY if user clicks CC: ON
   if (showCaptions && activeCue) {
     ctx.textAlign = 'center';
-    ctx.fillStyle = activeCue.color;
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(activeCue.speaker, W / 2, H - 50);
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText(activeCue.speaker, W / 2, H - 42);
     ctx.fillStyle = '#f8fafc';
-    ctx.font = '600 16px sans-serif';
-    ctx.fillText(activeCue.text, W / 2, H - 26);
+    ctx.font = '600 15px sans-serif';
+    ctx.fillText(activeCue.text, W / 2, H - 20);
   }
 }
 
@@ -883,9 +1082,10 @@ function drawCinemaChrome(chapter, activeCue, time) {
 function renderScene(t) {
   ctx.clearRect(0, 0, W, H);
   const cue = getActiveCue(t);
-  const speakingRole = cue ? cue.role : '';
+  const audioPlayingNow = activeVoiceAudio && !activeVoiceAudio.paused;
+  const speakingRole = (cue && audioPlayingNow) ? cue.role : '';
 
-  // 0s - 14s: PROLOGUE & OPENING TITLES
+  // 0s - 14s: PROLOGUE
   if (t < 14.0) {
     ctx.fillStyle = '#03050a';
     ctx.fillRect(0, 0, W, H);
@@ -923,10 +1123,10 @@ function renderScene(t) {
     ctx.font = '18px sans-serif';
     ctx.fillText('One boy. One Google Scholar search bar. One unstoppable AI.', W / 2, 392);
 
-    drawCinemaChrome('PROLOGUE', cue, t);
+    drawCinemaChrome('PROLOGUE', cue);
   }
 
-  // 14s - 44s: ACT I — THE SCHOLARLY PURIST (30 seconds)
+  // 14s - 44s: ACT I — THE SCHOLARLY PURIST
   else if (t < 44.0) {
     const local = t - 14.0;
     ctx.fillStyle = '#0f172a';
@@ -959,10 +1159,10 @@ function renderScene(t) {
     const facing = Math.cos(local * 1.1) >= 0 ? 1 : -1;
     drawTheBoy(boyX, 495, 1.25, 'run', t, facing, false, speakingRole === 'boy');
 
-    drawCinemaChrome('ACT I: THE SCHOLARLY PURIST', cue, t);
+    drawCinemaChrome('ACT I: THE SCHOLARLY PURIST', cue);
   }
 
-  // 44s - 72s: ACT II — AI TAKES OVER (28 seconds)
+  // 44s - 72s: ACT II — AI TAKES OVER
   else if (t < 72.0) {
     const local = t - 44.0;
     ctx.fillStyle = '#090d1c';
@@ -991,10 +1191,10 @@ function renderScene(t) {
 
     drawTheBoy(165, 495, 1.25, 'attack', t, 1, false, speakingRole === 'boy');
 
-    drawCinemaChrome('ACT II: ALGORITHMIC TAKEOVER', cue, t);
+    drawCinemaChrome('ACT II: ALGORITHMIC TAKEOVER', cue);
   }
 
-  // 72s - 117s: ACT III — 5-DIMENSION MULTIVERSE WAR (45 seconds)
+  // 72s - 117s: ACT III — 5-DIMENSION MULTIVERSE WAR
   else if (t < 117.0) {
     const local = t - 72.0;
     const dimIdx = Math.min(4, Math.floor(local / 9.0));
@@ -1060,15 +1260,15 @@ function renderScene(t) {
 
     ctx.restore();
 
-    drawCinemaChrome(dimNames[dimIdx], cue, t);
+    drawCinemaChrome(dimNames[dimIdx], cue);
   }
 
-  // 117s - 144s: ACT IV — THE BLACKOUT / UNPLUGGED (27 seconds)
+  // 117s - 144s: ACT IV — UNPLUGGED (AI DIES)
   else if (t < 144.0) {
     const local = t - 117.0;
-    const unplugged = local >= 9.0; // Unplugs right when Boy says "Unplugged!" at 126s
+    const unplugged = local >= 8.8;
 
-    if (Math.abs(local - 9.0) < 0.08 && lastSfxBucket !== 126) {
+    if (Math.abs(local - 8.8) < 0.08 && lastSfxBucket !== 126) {
       lastSfxBucket = 126;
       playSfx('unplug');
     }
@@ -1104,7 +1304,7 @@ function renderScene(t) {
       ctx.fillRect(674, 469, 11, 4);
     }
 
-    const boyX = unplugged ? 635 : lerp(180, 680, local / 9.0);
+    const boyX = unplugged ? 635 : lerp(180, 680, local / 8.8);
     drawTheBoy(boyX, 495, 1.25, unplugged ? 'stand' : 'run', t, 1, false, speakingRole === 'boy');
     drawAIProtagonist(400, unplugged ? 485 : 280, 1.3, t, 1.1, unplugged, speakingRole === 'ai' && !unplugged);
 
@@ -1117,16 +1317,16 @@ function renderScene(t) {
       ctx.fillText('CRITICAL SYSTEM FAILURE: SERVER UNPLUGGED', W / 2, 115);
     }
 
-    drawCinemaChrome('ACT IV: THE BLACKOUT', cue, t);
+    drawCinemaChrome('ACT IV: THE BLACKOUT', cue);
   }
 
-  // 144s - 174s: ACT V — MR. R (LORD & SAVIOR) + ANAY FIX AI (30 seconds)
+  // 144s - 174s: ACT V — MR. R (LORD & SAVIOR) + ANAY FIX AI
   else if (t < 174.0) {
     const local = t - 144.0;
-    const revived = local >= 18.0; // Revives right as Mr. R declares "Mainframe restored!" at 162s
+    const revived = local >= 19.0;
 
-    if (Math.abs(local - 18.0) < 0.08 && lastSfxBucket !== 162) {
-      lastSfxBucket = 162;
+    if (Math.abs(local - 19.0) < 0.08 && lastSfxBucket !== 163) {
+      lastSfxBucket = 163;
       playSfx('revive');
     }
 
@@ -1153,13 +1353,13 @@ function renderScene(t) {
     ctx.lineTo(340, revived ? 270 : 475);
     ctx.stroke();
 
-    const aiY = revived ? lerp(475, 265, (local - 18.0) / 3.5) : 485;
+    const aiY = revived ? lerp(475, 265, (local - 19.0) / 3.5) : 485;
     drawAIProtagonist(340, aiY, revived ? 1.45 : 1.2, t, revived ? 1.65 : 0.8, !revived, speakingRole === 'ai');
 
-    drawCinemaChrome('ACT V: THE RESURRECTION', cue, t);
+    drawCinemaChrome('ACT V: THE RESURRECTION', cue);
   }
 
-  // 174s - 196s: ACT VI — FINALE: AI PREVAILS, BOY REMAINS THE BETTER PERSON (22 seconds)
+  // 174s - 196s: ACT VI — FINALE
   else if (t < 196.0) {
     ctx.fillStyle = '#070b19';
     ctx.fillRect(0, 0, W, H);
@@ -1178,12 +1378,12 @@ function renderScene(t) {
     ctx.textAlign = 'center';
     ctx.fillText('THE BETTER PERSON  •  100% HUMAN GRIT', 900, 285);
 
-    drawCinemaChrome('FINALE: TRUE VICTORY', cue, t);
+    drawCinemaChrome('FINALE: TRUE VICTORY', cue);
   }
 
-  // 196s - 220s: GRAND HOLLYWOOD END CREDITS (24 seconds — ZERO OVERLAP!)
+  // 196s - 220s: END CREDITS
   else {
-    const credTime = t - 196.0; // 0 to 24s
+    const credTime = t - 196.0;
     ctx.fillStyle = '#02040a';
     ctx.fillRect(0, 0, W, H);
 
@@ -1202,7 +1402,6 @@ function renderScene(t) {
       ctx.fill();
     });
 
-    // Stage 1 (0s - 9s): Animated Principal Cast & Creator Cards
     if (credTime < 9.0) {
       const cardIdx = Math.min(2, Math.floor(credTime / 3.0));
       const cardLocal = credTime % 3.0;
@@ -1252,11 +1451,9 @@ function renderScene(t) {
         ctx.fillText('Champion of scholar.google.com & Human Integrity', 520, 415);
       }
       ctx.restore();
-    }
-    // Stage 2 (9s - 24s): Scrolling Credits -> Completely Clears Screen BEFORE "THE END" Appears
-    else {
-      const scrollLocal = credTime - 9.0; // 0 to 15s
-      const startY = 660 - scrollLocal * 105;
+    } else {
+      const scrollLocal = credTime - 9.0;
+      const startY = 660 - scrollLocal * 108;
 
       const creditLines = [
         { role: 'A FILM CREATED BY', name: 'GEMINI AI  •  ANAY GUPTA  •  BENJAMIN RONDINONE', color: '#fbbf24', size: 26 },
@@ -1272,9 +1469,9 @@ function renderScene(t) {
       let lowestCreditY = -999;
 
       creditLines.forEach((item, idx) => {
-        const yPos = startY + idx * 92;
+        const yPos = startY + idx * 90;
         lowestCreditY = Math.max(lowestCreditY, yPos + 35);
-        if (yPos > 30 && yPos < H - 65) {
+        if (yPos > 30 && yPos < H - 60) {
           ctx.fillStyle = '#94a3b8';
           ctx.font = 'bold 13px monospace';
           ctx.fillText(item.role, W / 2, yPos);
@@ -1285,9 +1482,8 @@ function renderScene(t) {
         }
       });
 
-      // Only fade in "THE END" AFTER every single scrolling credit has exited above the top of the frame!
-      if (lowestCreditY < 20) {
-        const endAlpha = clamp((20 - lowestCreditY) / 120, 0, 1);
+      if (lowestCreditY < 15) {
+        const endAlpha = clamp((15 - lowestCreditY) / 110, 0, 1);
         ctx.save();
         ctx.globalAlpha = endAlpha;
         ctx.fillStyle = '#fbbf24';
@@ -1300,7 +1496,7 @@ function renderScene(t) {
       }
     }
 
-    drawCinemaChrome('END CREDITS', null, t);
+    drawCinemaChrome('END CREDITS', null);
   }
 }
 
@@ -1336,9 +1532,9 @@ function checkDialogueTriggers(t) {
   if (!isPlaying) return;
   for (let i = 0; i < DIALOGUE_CUES.length; i++) {
     const cue = DIALOGUE_CUES[i];
-    if (!spokenCueIds.has(cue.id) && t >= cue.start && t <= cue.start + 1.2) {
-      spokenCueIds.add(cue.id);
-      speakCue(cue);
+    if (!playedCueIds.has(cue.id) && t >= cue.start && t <= cue.start + 1.0) {
+      playedCueIds.add(cue.id);
+      playCueAudio(cue);
       break;
     }
   }
@@ -1352,6 +1548,7 @@ function mainLoop(ts) {
     if (movieTime >= DURATION) {
       movieTime = DURATION;
       isPlaying = false;
+      stopActiveVoice();
     }
     checkDialogueTriggers(movieTime);
   }
@@ -1367,42 +1564,51 @@ function mainLoop(ts) {
 
 document.getElementById('play-hero-btn').addEventListener('click', () => {
   initAudio();
-  loadVoices();
   startScoreLoop();
   document.getElementById('start-overlay').style.display = 'none';
   isPlaying = true;
+  lastFrameTs = performance.now();
+  checkDialogueTriggers(movieTime);
 });
 
 document.getElementById('btn-playpause').addEventListener('click', () => {
   initAudio();
   if (movieTime >= DURATION) {
     movieTime = 0;
-    spokenCueIds.clear();
+    playedCueIds.clear();
   }
   isPlaying = !isPlaying;
-  try {
-    if ('speechSynthesis' in window) {
-      if (!isPlaying) window.speechSynthesis.pause();
-      else window.speechSynthesis.resume();
+  lastFrameTs = performance.now();
+  if (!isPlaying) {
+    if (activeVoiceAudio) {
+      try { activeVoiceAudio.pause(); } catch (e) {}
     }
-  } catch (e) {}
+  } else {
+    if (activeVoiceAudio && activeVoiceAudio.paused && activeVoiceAudio.currentTime > 0 && !activeVoiceAudio.ended) {
+      try { activeVoiceAudio.play(); } catch (e) {}
+    } else {
+      checkDialogueTriggers(movieTime);
+    }
+  }
 });
 
 document.getElementById('btn-restart').addEventListener('click', () => {
   initAudio();
-  try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+  stopActiveVoice();
   movieTime = 0;
   lastSfxBucket = -1;
-  spokenCueIds.clear();
+  playedCueIds.clear();
   isPlaying = true;
+  lastFrameTs = performance.now();
+  checkDialogueTriggers(0);
 });
 
 document.getElementById('btn-mute').addEventListener('click', (e) => {
   isMuted = !isMuted;
-  if (isMuted) {
-    try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (err) {}
+  if (activeVoiceAudio) {
+    activeVoiceAudio.muted = isMuted;
   }
-  e.target.textContent = isMuted ? '🔇 Voice & Audio: OFF' : '🔊 Voice & Audio: ON';
+  e.target.textContent = isMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
 });
 
 document.getElementById('btn-cc').addEventListener('click', (e) => {
@@ -1412,6 +1618,9 @@ document.getElementById('btn-cc').addEventListener('click', (e) => {
 
 document.getElementById('btn-speed').addEventListener('click', (e) => {
   playbackSpeed = playbackSpeed === 1.0 ? 1.25 : (playbackSpeed === 1.25 ? 1.5 : 1.0);
+  if (activeVoiceAudio) {
+    activeVoiceAudio.playbackRate = playbackSpeed;
+  }
   e.target.textContent = `${playbackSpeed.toFixed(2).replace('.00', '.0')}x`;
 });
 
@@ -1420,12 +1629,14 @@ document.getElementById('timeline-wrap').addEventListener('click', (e) => {
   const ratio = clamp((e.clientX - rect.left) / rect.width, 0, 1);
   movieTime = ratio * DURATION;
   lastSfxBucket = -1;
-  try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (err) {}
-  // Allow future cues from the scrubbed point onward to speak
-  spokenCueIds.clear();
+  stopActiveVoice();
+  playedCueIds.clear();
   DIALOGUE_CUES.forEach(c => {
-    if (c.start < movieTime - 0.5) spokenCueIds.add(c.id);
+    if (c.start < movieTime - 0.4) playedCueIds.add(c.id);
   });
+  if (isPlaying) {
+    checkDialogueTriggers(movieTime);
+  }
 });
 
 document.getElementById('btn-fs').addEventListener('click', () => {
@@ -1441,6 +1652,6 @@ requestAnimationFrame(mainLoop);
 </script>
 </body>
 </html>
-"""
+""".replace("__DIALOGUE_JSON__", DIALOGUE_JSON)
 
-components.html(MOVIE_HTML, height=590, scrolling=False)
+components.html(MOVIE_HTML, height=600, scrolling=False)
