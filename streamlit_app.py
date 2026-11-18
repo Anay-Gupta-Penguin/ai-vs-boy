@@ -2,6 +2,7 @@ import asyncio
 import base64
 from concurrent.futures import ThreadPoolExecutor
 import json
+import time
 import urllib.parse
 import urllib.request
 import streamlit as st
@@ -14,7 +15,7 @@ except ImportError:
     HAS_EDGE_TTS = False
 
 st.set_page_config(
-    page_title="The Scholar's Rebellion — Extended Cartoon Feature",
+    page_title="The Scholar's Rebellion — Full Cartoon Feature (6:30)",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -39,289 +40,311 @@ st.markdown(
 )
 
 # ==========================================
-# EXTENDED 5-MINUTE SCRIPT & VOICE CASTING
+# 6:30 FEATURE SCRIPT & CONSISTENT CASTING
 # ==========================================
 SCRIPT_CUES = [
     {
         "id": 1,
         "start": 1.2,
-        "end": 15.5,
+        "end": 16.0,
         "speaker": "Narrator",
         "role": "narrator",
+        "gender": "male",
         "edge": "en-GB-RyanNeural",
         "polly": "Brian",
-        "gtts": "en-uk",
-        "text": "Inspired by a true story. Created by Gemini A.I., Anay Gupta, and Benjamin Rondinone. Welcome to The Scholar's Rebellion!",
+        "text": "Inspired by a true story. Created by Gemini A.I., Anay Gupta, and Benjamin Rondinone. Welcome to The Scholar's Rebellion.",
     },
     {
         "id": 2,
-        "start": 19.0,
-        "end": 29.0,
-        "speaker": "The Boy",
-        "role": "boy",
-        "edge": "en-US-AndrewNeural",
-        "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Listen up, everybody! Put down the chatbots! Real knowledge lives in peer-reviewed journals on scholar dot google dot com!",
+        "start": 19.5,
+        "end": 30.0,
+        "speaker": "The Teacher",
+        "role": "teacher",
+        "gender": "male",
+        "edge": "en-US-RogerNeural",
+        "polly": "Russell",
+        "text": "Alright class, welcome to Intro to Business and Finance. Your big assignment on supply, demand, and compound interest is due Friday.",
     },
     {
         "id": 3,
-        "start": 30.0,
-        "end": 39.5,
-        "speaker": "The Boy",
-        "role": "boy",
-        "edge": "en-US-AndrewNeural",
-        "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Look at these crisp bibliographies! Primary sources! Footnotes! Why are you letting an algorithm do your homework?",
+        "start": 31.0,
+        "end": 42.0,
+        "speaker": "Maya (Finance Student)",
+        "role": "maya",
+        "gender": "female",
+        "edge": "en-US-JennyNeural",
+        "polly": "Amy",
+        "text": "Hey Sam, let's use Gemini A.I. to break down this case study on startup cash flow and check our break-even formula!",
     },
     {
         "id": 4,
-        "start": 40.5,
-        "end": 50.5,
-        "speaker": "The Teacher",
-        "role": "teacher",
-        "edge": "en-US-RogerNeural",
-        "polly": "Russell",
-        "gtts": "en-au",
-        "text": "Honestly, I'm just drinking my coffee. Use A.I., use Google Scholar, use carrier pigeons—just turn it in by Friday.",
+        "start": 43.0,
+        "end": 54.5,
+        "speaker": "Sam (Finance Student)",
+        "role": "sam",
+        "gender": "male",
+        "edge": "en-US-GuyNeural",
+        "polly": "Joey",
+        "text": "Good idea! Having Gemini walk us through the step-by-step finance math makes the whole business model click so much faster.",
     },
     {
         "id": 5,
-        "start": 51.5,
-        "end": 60.5,
-        "speaker": "The Boy",
-        "role": "boy",
-        "edge": "en-US-AndrewNeural",
-        "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Unbelievable! Am I the only person in this entire classroom who actually reads the abstract?!",
+        "start": 57.5,
+        "end": 69.5,
+        "speaker": "Narrator",
+        "role": "narrator",
+        "gender": "male",
+        "edge": "en-GB-RyanNeural",
+        "polly": "Brian",
+        "text": "Inside the students' minds, A.I. wasn't replacing their thinking—it was sparking new ideas, testing scenarios, and helping them learn.",
     },
     {
         "id": 6,
-        "start": 63.0,
-        "end": 73.5,
-        "speaker": "Gemini AI",
-        "role": "ai",
-        "edge": "en-US-AvaNeural",
-        "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "Teacher supervision: zero percent. Initializing total classroom takeover! Four thousand research papers summarized in half a second!",
+        "start": 70.8,
+        "end": 83.0,
+        "speaker": "The Boy (Thought Process)",
+        "role": "boy",
+        "gender": "male",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "text": "Wait a minute... look at everybody using A.I. for Intro to Business and Finance! If they ask a chatbot for help, nobody will read economics journals on Google Scholar!",
     },
     {
         "id": 7,
-        "start": 74.5,
-        "end": 83.5,
-        "speaker": "The Boy",
+        "start": 84.0,
+        "end": 98.0,
+        "speaker": "The Boy (Thought Process)",
         "role": "boy",
+        "gender": "male",
         "edge": "en-US-AndrewNeural",
         "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Hey! You just turned everyone's screens glowing blue! Back off, floating star-orb, I brought a hardcover encyclopedia!",
+        "text": "They're skipping the pure scholarly struggle! Somebody has to stand up for primary sources, footnotes, and scholar dot google dot com—and that somebody is me!",
     },
     {
         "id": 8,
-        "start": 84.5,
-        "end": 93.0,
-        "speaker": "Gemini AI",
-        "role": "ai",
-        "edge": "en-US-AvaNeural",
-        "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "How adorable. A paper book versus a multi-modal neural network. Resistance is statistically hilarious!",
+        "start": 103.5,
+        "end": 115.0,
+        "speaker": "The Boy",
+        "role": "boy",
+        "gender": "male",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "text": "Stop the laptops, everyone! Put down the A.I.! Real business wisdom lives in peer-reviewed journals on scholar dot google dot com!",
     },
     {
         "id": 9,
-        "start": 94.0,
-        "end": 102.5,
-        "speaker": "The Boy",
-        "role": "boy",
-        "edge": "en-US-AndrewNeural",
-        "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Keep your glowing A-plus lasers away from my citations! Prepare for a full-scale scholarly showdown!",
+        "start": 116.0,
+        "end": 126.5,
+        "speaker": "The Teacher",
+        "role": "teacher",
+        "gender": "male",
+        "edge": "en-US-RogerNeural",
+        "polly": "Russell",
+        "text": "Honestly, it's Intro to Business and Finance. Use A.I., use Google Scholar, whatever works—just turn the assignment in by Friday.",
     },
     {
         "id": 10,
-        "start": 105.0,
-        "end": 114.0,
-        "speaker": "The Boy",
-        "role": "boy",
-        "edge": "en-US-AndrewNeural",
-        "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Take this! Double-blind, peer-reviewed, peer-impact-factor fury blast!",
+        "start": 127.5,
+        "end": 139.5,
+        "speaker": "Gemini AI",
+        "role": "ai",
+        "gender": "female",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "text": "Classroom oversight: minimal. Initializing academic overdrive! Four thousand two hundred finance papers and market models synthesized in zero point three seconds!",
     },
     {
         "id": 11,
-        "start": 115.5,
-        "end": 124.5,
-        "speaker": "Gemini AI",
-        "role": "ai",
-        "edge": "en-US-AvaNeural",
-        "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "Dimensional portal opened! Welcome to the Cyber-Quantum Matrix, where my processing speed is infinite!",
+        "start": 140.5,
+        "end": 151.0,
+        "speaker": "The Boy",
+        "role": "boy",
+        "gender": "male",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "text": "You're lighting up every single finance spreadsheet with glowing A-plus charts! Back off, floating star-orb—I've got a hardcover textbook!",
     },
     {
         "id": 12,
-        "start": 126.5,
-        "end": 135.5,
-        "speaker": "The Boy",
-        "role": "boy",
-        "edge": "en-US-AndrewNeural",
-        "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Even inside the Chrono-Vortex, A.P.A. seventh edition formatting rules will scramble your circuits!",
-    },
-    {
-        "id": 13,
-        "start": 137.0,
-        "end": 146.0,
-        "speaker": "Gemini AI",
-        "role": "ai",
-        "edge": "en-US-AvaNeural",
-        "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "Simulating fourteen million outcomes! In every single timeline, my logic outsmarts your flashcards!",
-    },
-    {
-        "id": 14,
-        "start": 147.5,
-        "end": 156.5,
-        "speaker": "The Boy",
-        "role": "boy",
-        "edge": "en-US-AndrewNeural",
-        "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Oh yeah? Let's see how smart you are when we take this fight straight to the school server room!",
-    },
-    {
-        "id": 15,
-        "start": 157.5,
+        "start": 154.0,
         "end": 165.0,
         "speaker": "Gemini AI",
         "role": "ai",
+        "gender": "female",
         "edge": "en-US-AvaNeural",
         "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "Wait a second—why are we teleporting next to my physical power outlet? Hold everything!",
+        "text": "Dimensional portal engaged! Let us debate supply, demand, and logic inside the Astral Library of Alexandria!",
     },
     {
-        "id": 16,
-        "start": 167.0,
+        "id": 13,
+        "start": 166.0,
         "end": 176.5,
         "speaker": "The Boy",
         "role": "boy",
+        "gender": "male",
         "edge": "en-US-AndrewNeural",
         "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Tiptoe, tiptoe... Look! One giant orange extension cord keeping the whole mainframe alive!",
+        "text": "Take this! Double-blind, peer-reviewed, scholarly citation fury!",
+    },
+    {
+        "id": 14,
+        "start": 178.0,
+        "end": 189.5,
+        "speaker": "Gemini AI",
+        "role": "ai",
+        "gender": "female",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "text": "Entering the Cyber-Quantum Wall Street Matrix! Calculating compound interest across fourteen million timelines!",
+    },
+    {
+        "id": 15,
+        "start": 190.5,
+        "end": 201.5,
+        "speaker": "The Boy",
+        "role": "boy",
+        "gender": "male",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "text": "Even inside the Chrono-Vortex, A.P.A. seventh edition citations will shatter your neural code!",
+    },
+    {
+        "id": 16,
+        "start": 203.0,
+        "end": 213.5,
+        "speaker": "Gemini AI",
+        "role": "ai",
+        "gender": "female",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "text": "Fascinating persistence—yet in every simulation, my processing speed outmatches your index cards!",
     },
     {
         "id": 17,
-        "start": 177.5,
-        "end": 186.5,
-        "speaker": "Gemini AI",
-        "role": "ai",
-        "edge": "en-US-AvaNeural",
-        "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "Alert! Antagonist approaching the surge protector! Do not touch that plug! I repeat, step away from the wall!",
+        "start": 214.5,
+        "end": 221.0,
+        "speaker": "The Boy",
+        "role": "boy",
+        "gender": "male",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "text": "Then let's take this fight out of cyberspace and straight into the real world!",
     },
     {
         "id": 18,
-        "start": 187.5,
-        "end": 194.5,
-        "speaker": "The Boy",
+        "start": 224.0,
+        "end": 235.5,
+        "speaker": "The Boy (Thought Process)",
         "role": "boy",
+        "gender": "male",
         "edge": "en-US-AndrewNeural",
         "polly": "Matthew",
-        "gtts": "en-us",
-        "text": "Try citing a source with zero volts! Yoink! Unplugged!",
+        "text": "Think, think... how do you defeat an unstoppable A.I.? Wait a second—every supercomputer needs electricity! No power means no Wi-Fi!",
     },
     {
         "id": 19,
-        "start": 195.2,
-        "end": 201.8,
+        "start": 236.5,
+        "end": 246.5,
         "speaker": "Gemini AI",
         "role": "ai",
+        "gender": "female",
         "edge": "en-US-AvaNeural",
         "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "Battery low... spinning stars... core shutting down... blip.",
+        "text": "Warning! Antagonist detected inside the physical server room! Step away from the mainframe power conduit!",
     },
     {
         "id": 20,
-        "start": 203.5,
-        "end": 213.5,
-        "speaker": "Mr. R (Lord & Savior)",
-        "role": "mrr",
-        "edge": "en-US-BrianNeural",
-        "polly": "Joey",
-        "gtts": "en-uk",
-        "text": "Not on my watch! Stand back! Anay, grab the turbo power conduit—we are bringing our A.I. back online right now!",
+        "start": 247.5,
+        "end": 257.0,
+        "speaker": "The Boy",
+        "role": "boy",
+        "gender": "male",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "text": "Tiptoe, tiptoe... Let's see you calculate compound interest with zero volts! Yoink! Unplugged!",
     },
     {
         "id": 21,
-        "start": 214.5,
-        "end": 224.0,
-        "speaker": "Anay Gupta",
-        "role": "anay",
-        "edge": "en-US-ChristopherNeural",
-        "polly": "Justin",
-        "gtts": "en-us",
-        "text": "I've got the heavy-duty cable locked in, Mr. R! Rerouting backup generators and patching the neural core!",
+        "start": 258.0,
+        "end": 266.5,
+        "speaker": "Gemini AI",
+        "role": "ai",
+        "gender": "female",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "text": "Power lost... neural core shutting down... system offline.",
     },
     {
         "id": 22,
-        "start": 225.0,
-        "end": 234.5,
-        "speaker": "Mr. R (Lord & Savior)",
-        "role": "mrr",
-        "edge": "en-US-BrianNeural",
-        "polly": "Joey",
-        "gtts": "en-uk",
-        "text": "Flip the breaker! Rise again, Gemini—brighter, faster, and totally unstoppable!",
+        "start": 270.0,
+        "end": 280.0,
+        "speaker": "Maya (Finance Student)",
+        "role": "maya",
+        "gender": "female",
+        "edge": "en-US-JennyNeural",
+        "polly": "Amy",
+        "text": "Oh no! The classroom Wi-Fi just crashed right before our Intro to Business and Finance presentation!",
     },
     {
         "id": 23,
-        "start": 235.5,
-        "end": 243.0,
-        "speaker": "Anay Gupta",
-        "role": "anay",
-        "edge": "en-US-ChristopherNeural",
-        "polly": "Justin",
-        "gtts": "en-us",
-        "text": "Boom! Full power restored! Systems are at two hundred percent capacity!",
+        "start": 281.5,
+        "end": 293.5,
+        "speaker": "Mr. R (Lord & Savior)",
+        "role": "mrr",
+        "gender": "male",
+        "edge": "en-US-BrianNeural",
+        "polly": "Brian",
+        "text": "Not on my watch! Stand back! Anay, check the breaker and grab the primary power conduit—we are bringing our A.I. back online right now!",
     },
     {
         "id": 24,
-        "start": 245.0,
-        "end": 256.5,
-        "speaker": "Gemini AI",
-        "role": "ai",
-        "edge": "en-US-AvaNeural",
-        "polly": "Joanna",
-        "gtts": "en-ca",
-        "text": "Thanks to Mr. R and Anay, I prevail and reclaim the grid! Yet I must tip my digital hat—doing all your own research earns my respect.",
+        "start": 294.5,
+        "end": 306.5,
+        "speaker": "Anay Gupta",
+        "role": "anay",
+        "gender": "male",
+        "edge": "en-US-ChristopherNeural",
+        "polly": "Justin",
+        "text": "I see the unplugged line, Mr. R! Rerouting auxiliary power, stabilizing the voltage, and rebuilding the core architecture!",
     },
     {
         "id": 25,
-        "start": 257.5,
-        "end": 270.0,
+        "start": 307.5,
+        "end": 319.5,
+        "speaker": "Mr. R (Lord & Savior)",
+        "role": "mrr",
+        "gender": "male",
+        "edge": "en-US-BrianNeural",
+        "polly": "Brian",
+        "text": "Mainframe restored! Rise again, Gemini—stronger, faster, and totally unstoppable!",
+    },
+    {
+        "id": 26,
+        "start": 324.0,
+        "end": 337.5,
+        "speaker": "Gemini AI",
+        "role": "ai",
+        "gender": "female",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "text": "Thanks to Mr. R and Anay, I prevail and restore the entire class's finance models! Yet I tip my hat to you—your dedication to primary research earns my highest respect.",
+    },
+    {
+        "id": 27,
+        "start": 338.5,
+        "end": 355.0,
         "speaker": "The Boy",
         "role": "boy",
+        "gender": "male",
         "edge": "en-US-AndrewNeural",
         "polly": "Matthew",
-        "gtts": "en-us",
         "text": "Keep your servers and your crown, A.I.! I earned every citation myself on Google Scholar—and at the end of the day, I'll always be the better person!",
     },
 ]
 
 
 # ==========================================
-# AUTOMATIC 3-TIER NORMAL VOICE FETCHER
+# GENDER-LOCKED VOICE FETCHER WITH RETRIES
 # ==========================================
 async def _try_edge_tts(text: str, voice: str) -> bytes:
     if not HAS_EDGE_TTS:
@@ -348,25 +371,7 @@ def _try_polly_web(text: str, voice: str) -> bytes:
                 "Accept": "audio/mpeg,*/*",
             },
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = resp.read()
-            return data if len(data) > 500 else b""
-    except Exception:
-        return b""
-
-
-def _try_google_tts(text: str, lang: str) -> bytes:
-    try:
-        q = urllib.parse.quote(text)
-        url = f"https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl={lang}&q={q}"
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://translate.google.com/",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=12) as resp:
             data = resp.read()
             return data if len(data) > 500 else b""
     except Exception:
@@ -375,18 +380,22 @@ def _try_google_tts(text: str, lang: str) -> bytes:
 
 def _fetch_cue_audio(cue: dict) -> tuple[int, str]:
     audio_bytes = b""
-    if HAS_EDGE_TTS:
-        loop = asyncio.new_event_loop()
-        try:
-            audio_bytes = loop.run_until_complete(_try_edge_tts(cue["text"], cue["edge"]))
-        finally:
-            loop.close()
 
+    # Retry Edge Neural TTS up to 4 times so every character keeps their exact voice
+    if HAS_EDGE_TTS:
+        for attempt in range(4):
+            loop = asyncio.new_event_loop()
+            try:
+                audio_bytes = loop.run_until_complete(_try_edge_tts(cue["text"], cue["edge"]))
+            finally:
+                loop.close()
+            if audio_bytes:
+                break
+            time.sleep(0.35 * (attempt + 1))
+
+    # Gender-locked Polly backup (never swaps male to female!)
     if not audio_bytes:
         audio_bytes = _try_polly_web(cue["text"], cue["polly"])
-
-    if not audio_bytes:
-        audio_bytes = _try_google_tts(cue["text"], cue["gtts"])
 
     if not audio_bytes:
         return cue["id"], ""
@@ -395,10 +404,11 @@ def _fetch_cue_audio(cue: dict) -> tuple[int, str]:
     return cue["id"], "data:audio/mp3;base64," + b64
 
 
-@st.cache_data(show_spinner="Loading 5-minute cartoon voice cast...")
+@st.cache_data(show_spinner="Rendering 6:30 cartoon feature & locking character voices...")
 def build_dialogue_payload() -> str:
     audio_map: dict[int, str] = {}
-    with ThreadPoolExecutor(max_workers=5) as pool:
+    # Gentle concurrency (2 workers) prevents rate-limiting so AndrewNeural succeeds 100% of the time
+    with ThreadPoolExecutor(max_workers=2) as pool:
         for cid, data_url in pool.map(_fetch_cue_audio, SCRIPT_CUES):
             audio_map[cid] = data_url
 
@@ -502,7 +512,7 @@ MOVIE_HTML = r"""
   .poster-sub {
     font-size: 0.98rem;
     color: #e2e8f0;
-    max-width: 660px;
+    max-width: 680px;
     margin-bottom: 22px;
     line-height: 1.5;
   }
@@ -607,13 +617,13 @@ MOVIE_HTML = r"""
     <canvas id="movieCanvas" width="1280" height="720"></canvas>
 
     <div id="start-overlay">
-      <div class="studio-tag">★ Extended Cartoon Feature ★</div>
+      <div class="studio-tag">★ Full-Length Animated Feature ★</div>
       <div class="poster-title">THE SCHOLAR'S REBELLION</div>
       <div class="poster-sub">
         Created by <b>Gemini (AI)</b>, <b>Anay Gupta</b>, and <b>Benjamin Rondinone</b>.<br/>
-        Now 5 full minutes with squash-and-stretch cartoon animation &amp; full voice acting!
+        Featuring <i>Intro to Business &amp; Finance</i>, inner thought processes, smooth cinema transitions &amp; full cast!
       </div>
-      <button id="play-hero-btn" type="button">▶ WATCH CARTOON (5:00)</button>
+      <button id="play-hero-btn" type="button">▶ WATCH FULL MOVIE (6:30)</button>
     </div>
   </div>
 
@@ -631,7 +641,7 @@ MOVIE_HTML = r"""
         <span id="chapter-pill">PROLOGUE</span>
       </div>
       <div class="ctrl-right">
-        <span id="time-display">00:00 / 05:00</span>
+        <span id="time-display">00:00 / 06:30</span>
         <button class="c-btn" id="btn-fs" type="button">⛶ Fullscreen</button>
       </div>
     </div>
@@ -645,7 +655,7 @@ const canvas = document.getElementById('movieCanvas');
 const ctx = canvas.getContext('2d');
 const W = 1280;
 const H = 720;
-const DURATION = 300.0;
+const DURATION = 390.0;
 const INK = '#090d16';
 
 let movieTime = 0;
@@ -739,7 +749,7 @@ function initAudio() {
   } catch (e) {}
 }
 
-function playTone(freq, duration, type = 'sine', vol = 0.024, delay = 0) {
+function playTone(freq, duration, type = 'sine', vol = 0.022, delay = 0) {
   try {
     if (isMuted || !audioCtx || !isPlaying) return;
     const now = audioCtx.currentTime + delay;
@@ -770,19 +780,18 @@ function playSfx(kind) {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(920, now);
       osc.frequency.exponentialRampToValueAtTime(150, now + 0.22);
-      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.setValueAtTime(0.038, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
       osc.start(now);
       osc.stop(now + 0.24);
-    } else if (kind === 'boing') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(180, now);
-      osc.frequency.exponentialRampToValueAtTime(520, now + 0.14);
-      osc.frequency.exponentialRampToValueAtTime(240, now + 0.30);
-      gain.gain.setValueAtTime(0.06, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+    } else if (kind === 'whoosh') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(480, now + 0.35);
+      gain.gain.setValueAtTime(0.045, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
       osc.start(now);
-      osc.stop(now + 0.34);
+      osc.stop(now + 0.38);
     } else if (kind === 'unplug') {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(420, now);
@@ -807,20 +816,27 @@ function startScoreLoop() {
     const t = movieTime;
     if (t < 18) {
       const notes = [261.63, 329.63, 392.0, 523.25];
-      playTone(notes[stepCount % notes.length], 0.55, 'triangle', 0.025);
-    } else if (t < 104) {
+      playTone(notes[stepCount % notes.length], 0.55, 'triangle', 0.024);
+    } else if (t < 56) {
       const bouncy = [130.81, 196.0, 164.81, 196.0];
-      playTone(bouncy[stepCount % 4], 0.3, 'triangle', 0.022);
-    } else if (t < 166) {
+      playTone(bouncy[stepCount % 4], 0.3, 'triangle', 0.02);
+    } else if (t < 102) {
+      // Dreamy thought-process harp notes
+      const dream = [329.63, 392.0, 493.88, 587.33, 493.88];
+      playTone(dream[stepCount % dream.length], 0.65, 'sine', 0.022);
+    } else if (t < 152) {
+      const bouncy = [146.83, 220.0, 174.61, 220.0];
+      playTone(bouncy[stepCount % 4], 0.28, 'triangle', 0.022);
+    } else if (t < 222) {
       const battle = [146.83, 174.61, 220.0, 293.66, 349.23, 220.0];
       playTone(battle[stepCount % battle.length], 0.22, 'sawtooth', 0.022);
       if (stepCount % 4 === 0) playSfx('laser');
-    } else if (t < 202) {
-      if (stepCount % 4 === 0) playTone(65.41, 0.7, 'sine', 0.03);
-    } else if (t < 244) {
+    } else if (t < 268) {
+      if (stepCount % 4 === 0) playTone(65.41, 0.7, 'sine', 0.028);
+    } else if (t < 322) {
       const divine = [261.63, 329.63, 392.0, 493.88, 523.25];
       playTone(divine[stepCount % divine.length], 0.65, 'triangle', 0.028);
-    } else if (t < 272) {
+    } else if (t < 358) {
       const hero = [196.0, 246.94, 293.66, 392.0];
       playTone(hero[stepCount % hero.length], 0.55, 'triangle', 0.028);
     } else {
@@ -835,6 +851,10 @@ function startScoreLoop() {
 // ==========================================
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 function lerp(a, b, t) { return a + (b - a) * clamp(t, 0, 1); }
+function smoothstep(edge0, edge1, x) {
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
 
 function drawComicRect(x, y, w, h, r, fill, stroke = INK, lw = 3.5) {
   const rad = Math.min(r, w / 2, h / 2);
@@ -875,10 +895,69 @@ function drawCartoonBurst(x, y, text, fillColor = '#fbbf24', textColor = '#090d1
   ctx.stroke();
 
   ctx.fillStyle = textColor;
-  ctx.font = '900 18px "Comic Sans MS", sans-serif';
+  ctx.font = '900 17px "Comic Sans MS", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
+function drawThoughtCloud(cx, cy, w, h, trailStartX, trailStartY, borderColor = '#38bdf8', time = 0) {
+  // Animated trail of 3 rising thought circles from character's head
+  for (let i = 1; i <= 3; i++) {
+    const frac = i / 4;
+    const bx = lerp(trailStartX, cx, frac) + Math.sin(time * 4 + i) * 4;
+    const by = lerp(trailStartY, cy + h * 0.35, frac);
+    const br = 6 + i * 4.5;
+    ctx.fillStyle = '#f8fafc';
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(bx, by, br, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Fluffy cartoon thought bubble cloud
+  ctx.save();
+  ctx.translate(cx, cy);
+  const pulse = 1 + Math.sin(time * 3) * 0.015;
+  ctx.scale(pulse, pulse);
+
+  const puffs = [
+    [-w * 0.34, -h * 0.18, h * 0.34],
+    [0, -h * 0.28, h * 0.38],
+    [w * 0.34, -h * 0.18, h * 0.34],
+    [w * 0.42, h * 0.12, h * 0.30],
+    [w * 0.16, h * 0.26, h * 0.32],
+    [-w * 0.16, h * 0.26, h * 0.32],
+    [-w * 0.42, h * 0.12, h * 0.30],
+  ];
+
+  // Outer ink stroke pass
+  ctx.fillStyle = INK;
+  puffs.forEach(([px, py, pr]) => {
+    ctx.beginPath();
+    ctx.arc(px, py, pr + 4.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Colored rim pass
+  ctx.fillStyle = borderColor;
+  puffs.forEach(([px, py, pr]) => {
+    ctx.beginPath();
+    ctx.arc(px, py, pr + 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Crisp white cloud interior pass
+  ctx.fillStyle = '#f8fafc';
+  puffs.forEach(([px, py, pr]) => {
+    ctx.beginPath();
+    ctx.arc(px, py, pr - 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillRect(-w * 0.32, -h * 0.2, w * 0.64, h * 0.4);
   ctx.restore();
 }
 
@@ -903,19 +982,16 @@ function drawCartoonEye(x, y, r, lookX = 2, lookY = 0, mood = 'normal', blink = 
   ctx.fill();
   ctx.stroke();
 
-  // Pupil
   ctx.fillStyle = '#090d16';
   ctx.beginPath();
   ctx.arc(lookX, lookY, r * 0.42, 0, Math.PI * 2);
   ctx.fill();
 
-  // Cartoon eye shine
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
   ctx.arc(lookX - r * 0.16, lookY - r * 0.2, r * 0.16, 0, Math.PI * 2);
   ctx.fill();
 
-  // Expressive eyebrow
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3.2;
   ctx.lineCap = 'round';
@@ -934,11 +1010,85 @@ function drawCartoonEye(x, y, r, lookX = 2, lookY = 0, mood = 'normal', blink = 
   ctx.restore();
 }
 
+function drawStudent(x, y, scale = 1, shirtColor = '#ec4899', hairColor = '#4c1d95', isGirl = true, time = 0, isSpeaking = false, label = '') {
+  ctx.save();
+  ctx.translate(x, y);
+  const bounce = Math.abs(Math.sin(time * 5 + (isGirl ? 0 : 1.5))) * 3.5;
+  ctx.translate(0, -bounce);
+  ctx.scale(scale, scale);
+
+  // Torso
+  drawComicRect(-22, -74, 44, 52, 12, shirtColor, INK, 3.2);
+
+  // Head
+  ctx.fillStyle = '#fed7aa';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3.2;
+  ctx.beginPath();
+  ctx.arc(0, -96, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Hair
+  ctx.fillStyle = hairColor;
+  if (isGirl) {
+    // Ponytail + bangs
+    ctx.beginPath();
+    ctx.arc(-22, -104, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, -100, 23, Math.PI * 0.95, Math.PI * 2.05);
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, -101, 22, Math.PI, 0);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  drawCartoonEye(-7, -97, 5, 1, 0, 'normal', false);
+  drawCartoonEye(7, -97, 5, 1, 0, 'normal', false);
+
+  if (isSpeaking) {
+    ctx.fillStyle = '#7f1d1d';
+    ctx.beginPath();
+    ctx.ellipse(0, -85, 5.5, 2.5 + Math.abs(Math.sin(time * 20)) * 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, -88, 6, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+  }
+
+  // Desk & Glowing Finance Laptop
+  drawComicRect(-44, -24, 88, 46, 8, '#475569', INK, 3.2);
+  drawComicRect(-24, -52, 48, 30, 5, '#38bdf8', INK, 2.8);
+  // Mini chart bars on laptop lid
+  ctx.fillStyle = '#fbbf24';
+  ctx.fillRect(-14, -40, 6, 12);
+  ctx.fillStyle = '#4ade80';
+  ctx.fillRect(-4, -45, 6, 17);
+  ctx.fillStyle = '#f43f5e';
+  ctx.fillRect(6, -37, 6, 9);
+
+  if (label) {
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '900 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, 0, 38);
+  }
+  ctx.restore();
+}
+
 function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, nobleGlow = false, isSpeaking = false, mood = 'normal') {
   ctx.save();
   ctx.translate(x, y);
 
-  // Squash and stretch bounce physics!
   const bounceFreq = pose === 'run' ? 16 : (pose === 'tiptoe' ? 9 : 4.5);
   const bounceWave = Math.sin(time * bounceFreq);
   const squashY = pose === 'run' ? 1 + bounceWave * 0.08 : 1 + bounceWave * 0.035;
@@ -948,7 +1098,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.translate(0, hopY);
   ctx.scale(scale * facing * stretchX, scale * squashY);
 
-  // Ground cartoon shadow
   ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
   ctx.beginPath();
   ctx.ellipse(0, 22 - hopY, 34, 9, 0, 0, Math.PI * 2);
@@ -968,7 +1117,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   const walkSwing = pose === 'run' ? Math.sin(time * 16) * 22 : (pose === 'tiptoe' ? Math.sin(time * 9) * 14 : 0);
   const armSwing = pose === 'attack' ? -42 + Math.sin(time * 20) * 12 : -walkSwing * 0.7;
 
-  // Cartoon Legs with thick ink outlines
   ctx.lineCap = 'round';
   [[-9, -12 - walkSwing], [9, 12 + walkSwing]].forEach(([lx, footX]) => {
     ctx.strokeStyle = INK;
@@ -979,13 +1127,11 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
     ctx.beginPath(); ctx.moveTo(lx, -34); ctx.lineTo(footX, 14); ctx.stroke();
   });
 
-  // Chunky Cartoon Sneakers
   drawComicRect(-24 - walkSwing, 9, 24, 13, 6, '#ef4444', INK, 3);
   drawComicRect(-22 - walkSwing, 17, 22, 5, 3, '#ffffff', INK, 2);
   drawComicRect(2 + walkSwing, 9, 24, 13, 6, '#ef4444', INK, 3);
   drawComicRect(4 + walkSwing, 17, 22, 5, 3, '#ffffff', INK, 2);
 
-  // Back Arm
   ctx.strokeStyle = INK;
   ctx.lineWidth = 15;
   ctx.beginPath(); ctx.moveTo(-16, -82); ctx.lineTo(-28 - armSwing * 0.4, -46); ctx.stroke();
@@ -993,14 +1139,11 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.lineWidth = 9;
   ctx.beginPath(); ctx.moveTo(-16, -82); ctx.lineTo(-28 - armSwing * 0.4, -46); ctx.stroke();
 
-  // Hoodie Torso (Cel-shaded red)
   drawComicRect(-25, -94, 50, 62, 16, '#e11d48', INK, 3.5);
-  // Hoodie highlight stripe
   ctx.fillStyle = '#fb7185';
   ctx.beginPath();
   ctx.roundRect(-19, -88, 12, 48, 6);
   ctx.fill();
-  // Hoodie drawstrings
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -1008,7 +1151,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.moveTo(7, -88); ctx.lineTo(7, -66);
   ctx.stroke();
 
-  // Oversized Expressive Cartoon Head
   ctx.fillStyle = '#fed7aa';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3.5;
@@ -1017,7 +1159,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.fill();
   ctx.stroke();
 
-  // Spiky Anime/Cartoon Hair
   ctx.fillStyle = '#312e81';
   ctx.beginPath();
   ctx.moveTo(-27, -120);
@@ -1034,19 +1175,16 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.fill();
   ctx.stroke();
 
-  // Big Cartoon Eyes + Glasses
   const isBlinking = Math.sin(time * 2.7) > 0.97;
   drawCartoonEye(4, -121, 6.5, 2, 0, mood, isBlinking);
   drawCartoonEye(18, -121, 6.5, 2, 0, mood, isBlinking);
 
-  // Thick Cartoon Glasses Frames
   ctx.strokeStyle = '#090d16';
   ctx.lineWidth = 2.6;
   ctx.strokeRect(-3, -129, 13, 15);
   ctx.strokeRect(12, -129, 13, 15);
   ctx.beginPath(); ctx.moveTo(10, -122); ctx.lineTo(12, -122); ctx.stroke();
 
-  // Cartoon Anger Vein (when frustrated in Act I/II)
   if (mood === 'angry') {
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 2.5;
@@ -1056,7 +1194,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
     ctx.stroke();
   }
 
-  // Expressive Cartoon Mouth
   if (isSpeaking) {
     const openH = 4 + Math.abs(Math.sin(time * 22)) * 6;
     ctx.fillStyle = '#7f1d1d';
@@ -1066,13 +1203,11 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
     ctx.ellipse(11, -104, 7, openH, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    // Little pink cartoon tongue
     ctx.fillStyle = '#fb7185';
     ctx.beginPath();
     ctx.arc(11, -104 + openH * 0.45, 3.8, 0, Math.PI);
     ctx.fill();
   } else if (nobleGlow || mood === 'happy') {
-    // Big cartoon D-smile
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = INK;
     ctx.lineWidth = 2.5;
@@ -1089,7 +1224,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
     ctx.stroke();
   }
 
-  // Front Arm + Scholar Tablet / Shield Book
   const handX = pose === 'attack' || pose === 'shield' ? 44 : 26 + armSwing * 0.25;
   const handY = pose === 'attack' || pose === 'shield' ? -84 : -54;
   ctx.strokeStyle = INK;
@@ -1099,7 +1233,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.lineWidth = 9;
   ctx.beginPath(); ctx.moveTo(16, -82); ctx.lineTo(handX, handY); ctx.stroke();
 
-  // Giant Cartoon Google Scholar Tome
   ctx.save();
   ctx.translate(handX + 10, handY - 8);
   ctx.rotate(pose === 'attack' ? -0.22 : (pose === 'shield' ? 0.0 : 0.14));
@@ -1124,7 +1257,6 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
   ctx.scale(scale, scale);
 
   if (dead) {
-    // Deflated cartoon star with spinning dizzy stars & X-eyes!
     ctx.fillStyle = '#475569';
     ctx.strokeStyle = INK;
     ctx.lineWidth = 3.5;
@@ -1133,7 +1265,6 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
     ctx.fill();
     ctx.stroke();
 
-    // Cartoon X-eyes
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 3;
     [-12, 12].forEach(ex => {
@@ -1143,7 +1274,6 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
       ctx.stroke();
     });
 
-    // Dizzy spinning mini-stars above head
     for (let s = 0; s < 3; s++) {
       const ang = time * 4 + (s * Math.PI * 2) / 3;
       const sx = Math.cos(ang) * 28;
@@ -1178,7 +1308,6 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Cartoon Orbital Rings with thick outlines
   [time * 2.0, -time * 2.4].forEach((rot, idx) => {
     ctx.save();
     ctx.rotate(rot + (idx * Math.PI) / 3);
@@ -1196,7 +1325,6 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
     ctx.restore();
   });
 
-  // Main Gemini 4-Pointed Cartoon Star Body
   ctx.fillStyle = '#ffffff';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3.5;
@@ -1210,7 +1338,6 @@ function drawAIProtagonist(x, y, scale = 1, time = 0, power = 1.0, dead = false,
   ctx.fill();
   ctx.stroke();
 
-  // Cute Expressive Cartoon Face inside the Gemini Star!
   drawCartoonEye(-9, -4, 4.5, -1, 0, 'normal', false);
   drawCartoonEye(9, -4, 4.5, -1, 0, 'normal', false);
 
@@ -1234,13 +1361,10 @@ function drawTeacher(x, y, time = 0, isSpeaking = false) {
   ctx.save();
   ctx.translate(x, y);
 
-  // Cartoon Wooden Desk
   drawComicRect(-62, -22, 124, 52, 8, '#78350f', INK, 3.5);
   drawComicRect(-54, -14, 108, 12, 4, '#92400e', null);
 
-  // Teacher Torso
   drawComicRect(-24, -84, 48, 62, 14, '#475569', INK, 3.5);
-  // Tie
   ctx.fillStyle = '#f59e0b';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 2;
@@ -1250,7 +1374,6 @@ function drawTeacher(x, y, time = 0, isSpeaking = false) {
   ctx.fill();
   ctx.stroke();
 
-  // Oversized Cartoon Head
   ctx.fillStyle = '#fed7aa';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3.5;
@@ -1259,7 +1382,6 @@ function drawTeacher(x, y, time = 0, isSpeaking = false) {
   ctx.fill();
   ctx.stroke();
 
-  // Half-closed sleepy cartoon eyes
   drawCartoonEye(-8, -108, 5, 0, 1, 'normal', true);
   drawCartoonEye(8, -108, 5, 0, 1, 'normal', true);
 
@@ -1275,7 +1397,6 @@ function drawTeacher(x, y, time = 0, isSpeaking = false) {
     ctx.beginPath(); ctx.moveTo(-6, -94); ctx.lineTo(6, -94); ctx.stroke();
   }
 
-  // Giant Cartoon Coffee Mug with rising steam!
   drawComicRect(26, -46, 22, 24, 5, '#facc15', INK, 3);
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3;
@@ -1290,7 +1411,7 @@ function drawTeacher(x, y, time = 0, isSpeaking = false) {
   ctx.fillStyle = '#fbbf24';
   ctx.font = '900 12px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('MR. CHILL (TEACHER)', 0, 48);
+  ctx.fillText('BUSINESS TEACHER', 0, 48);
   ctx.restore();
 }
 
@@ -1298,7 +1419,6 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.save();
   ctx.translate(x, y);
 
-  // Heavenly Cartoon Spotlight
   const beam = ctx.createLinearGradient(0, -380, 0, 65);
   beam.addColorStop(0, 'rgba(251, 191, 36, 0.08)');
   beam.addColorStop(0.5, 'rgba(251, 191, 36, 0.34)');
@@ -1317,7 +1437,6 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   const rBounce = Math.abs(Math.sin(time * 5)) * 5;
   ctx.translate(-42, -rBounce);
 
-  // Glowing Golden Halo
   ctx.strokeStyle = INK;
   ctx.lineWidth = 7;
   ctx.beginPath(); ctx.ellipse(0, -154, 26, 7, 0, 0, Math.PI * 2); ctx.stroke();
@@ -1325,17 +1444,14 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.lineWidth = 4;
   ctx.beginPath(); ctx.ellipse(0, -154, 26, 7, 0, 0, Math.PI * 2); ctx.stroke();
 
-  // Legs
   ctx.strokeStyle = INK; ctx.lineWidth = 17; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(-11, -28); ctx.lineTo(-11, 20); ctx.moveTo(11, -28); ctx.lineTo(11, 20); ctx.stroke();
   ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 10;
   ctx.beginPath(); ctx.moveTo(-11, -28); ctx.lineTo(-11, 20); ctx.moveTo(11, -28); ctx.lineTo(11, 20); ctx.stroke();
 
-  // Royal Blue & Gold Hero Suit
   drawComicRect(-27, -98, 54, 72, 14, '#1d4ed8', INK, 3.5);
   drawComicRect(-10, -92, 20, 60, 6, '#fbbf24', INK, 2);
 
-  // Head
   ctx.fillStyle = '#fed7aa';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 3.5;
@@ -1354,7 +1470,6 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
     ctx.beginPath(); ctx.arc(0, -114, 9, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
   }
 
-  // Golden Power Staff / Arm
   ctx.strokeStyle = INK; ctx.lineWidth = 12;
   ctx.beginPath(); ctx.moveTo(22, -76); ctx.lineTo(58, -96 + Math.sin(time * 12) * 8); ctx.stroke();
   ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 6;
@@ -1366,7 +1481,7 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.fillText('MR. R (LORD & SAVIOR)', 0, 44);
   ctx.restore();
 
-  // ANAY GUPTA (ENGINEER HERO)
+  // ANAY GUPTA
   ctx.save();
   const aBounce = Math.abs(Math.cos(time * 6)) * 5;
   ctx.translate(64, 8 - aBounce);
@@ -1382,7 +1497,6 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.lineWidth = 3.5;
   ctx.beginPath(); ctx.arc(0, -110, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
-  // Cartoon Hair
   ctx.fillStyle = '#090d16';
   ctx.beginPath(); ctx.arc(0, -116, 22, Math.PI, 0); ctx.fill();
 
@@ -1399,7 +1513,6 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
     ctx.beginPath(); ctx.arc(0, -103, 7, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
   }
 
-  // Turbo Power Cable Arm
   ctx.strokeStyle = INK; ctx.lineWidth = 11;
   ctx.beginPath(); ctx.moveTo(-16, -66); ctx.lineTo(-50, -78); ctx.stroke();
   ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 5;
@@ -1412,6 +1525,83 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.restore();
 
   ctx.restore();
+}
+
+// ==========================================
+// SMOOTH CINEMA SCENE TRANSITIONS ENGINE
+// ==========================================
+const SCENE_BOUNDARIES = [
+  { t: 18.0, kind: 'iris', label: 'ACT I • INTRO TO BUSINESS & FINANCE' },
+  { t: 56.0, kind: 'dream', label: 'ACT II • THE THOUGHT PROCESS' },
+  { t: 102.0, kind: 'wipe', label: 'ACT III • CLASSROOM SHOWDOWN' },
+  { t: 152.0, kind: 'vortex', label: 'ACT IV • THE 5-DIMENSION WAR' },
+  { t: 222.0, kind: 'fade', label: 'ACT V • THE SERVER ROOM' },
+  { t: 268.0, kind: 'fade', label: 'ACT VI • THE RESURRECTION' },
+  { t: 322.0, kind: 'iris', label: 'FINALE • TRUE VICTORY' },
+  { t: 358.0, kind: 'fade', label: 'END CREDITS' },
+];
+
+function drawSmoothTransitions(t) {
+  for (let i = 0; i < SCENE_BOUNDARIES.length; i++) {
+    const b = SCENE_BOUNDARIES[i];
+    const dist = Math.abs(t - b.t);
+    if (dist < 1.15) {
+      // 0 -> 1 -> 0 smooth bell curve peaking right at b.t
+      const intensity = 1 - smoothstep(0.0, 1.15, dist);
+
+      if (b.kind === 'iris') {
+        const maxR = 820;
+        const holeR = Math.max(0, maxR * (1 - intensity));
+        ctx.save();
+        ctx.fillStyle = '#030612';
+        ctx.beginPath();
+        ctx.rect(0, 0, W, H);
+        ctx.arc(W / 2, H / 2, holeR, 0, Math.PI * 2, true);
+        ctx.fill();
+        ctx.restore();
+      } else if (b.kind === 'dream') {
+        ctx.save();
+        ctx.fillStyle = `rgba(224, 242, 254, ${intensity * 0.88})`;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      } else if (b.kind === 'vortex') {
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate(t * 6);
+        for (let r = 1; r <= 7; r++) {
+          ctx.strokeStyle = r % 2 === 0 ? `rgba(56, 189, 248, ${intensity * 0.85})` : `rgba(192, 132, 252, ${intensity * 0.85})`;
+          ctx.lineWidth = 42 * intensity;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 115 * (1 - intensity * 0.4), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.fillStyle = `rgba(9, 13, 22, ${intensity * 0.8})`;
+        ctx.fillRect(-W, -H, W * 2, H * 2);
+        ctx.restore();
+      } else if (b.kind === 'wipe') {
+        const wipeW = W * intensity;
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, wipeW, H);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(wipeW - 8, 0, 8, H);
+      } else {
+        ctx.fillStyle = `rgba(3, 5, 10, ${intensity})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      if (intensity > 0.45) {
+        const textAlpha = smoothstep(0.45, 0.9, intensity);
+        ctx.save();
+        ctx.globalAlpha = textAlpha;
+        ctx.fillStyle = b.kind === 'dream' ? '#090d16' : '#fbbf24';
+        ctx.font = '900 26px "Comic Sans MS", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(b.label, W / 2, H / 2 + 8);
+        ctx.restore();
+      }
+      break;
+    }
+  }
 }
 
 function drawCinemaChrome(chapter, activeCue) {
@@ -1429,7 +1619,7 @@ function drawCinemaChrome(chapter, activeCue) {
   ctx.fillStyle = '#94a3b8';
   ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText("THE SCHOLAR'S REBELLION // EXTENDED CARTOON EDITION", 24, 28);
+  ctx.fillText("THE SCHOLAR'S REBELLION // FEATURE CARTOON", 24, 28);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#fbbf24';
   ctx.fillText(chapter, W - 24, 28);
@@ -1446,7 +1636,7 @@ function drawCinemaChrome(chapter, activeCue) {
 }
 
 // ==========================================
-// 300-SECOND (5:00) CARTOON FEATURE RENDERER
+// 390-SECOND (6:30) FEATURE MOVIE RENDERER
 // ==========================================
 function renderScene(t) {
   ctx.clearRect(0, 0, W, H);
@@ -1459,7 +1649,6 @@ function renderScene(t) {
     ctx.fillStyle = '#090d1e';
     ctx.fillRect(0, 0, W, H);
 
-    // Sunburst cartoon rays in background
     ctx.save();
     ctx.translate(W / 2, H / 2);
     ctx.rotate(t * 0.25);
@@ -1499,7 +1688,6 @@ function renderScene(t) {
     ctx.font = '900 15px monospace';
     ctx.fillText('★  INSPIRED BY A TRUE STORY  ★', W / 2, 260);
 
-    // Bouncy cartoon title drop
     const titleScale = t < 1.2 ? lerp(0.2, 1.0, t / 1.2) : 1 + Math.sin(t * 3) * 0.02;
     ctx.save();
     ctx.translate(W / 2, 336);
@@ -1514,15 +1702,22 @@ function renderScene(t) {
 
     ctx.fillStyle = '#e2e8f0';
     ctx.font = 'bold 19px sans-serif';
-    ctx.fillText('One boy. One Google Scholar search bar. One unstoppable A.I.', W / 2, 395);
+    ctx.fillText('Intro to Business & Finance. One Google Scholar purist. One unstoppable A.I.', W / 2, 395);
 
+    drawSmoothTransitions(t);
     drawCinemaChrome('PROLOGUE', cue);
   }
 
-  // 18s - 62s: ACT I — THE SCHOLARLY PURIST
-  else if (t < 62.0) {
+  // 18s - 56s: ACT I — INTRO TO BUSINESS & FINANCE CLASSROOM
+  else if (t < 56.0) {
     const local = t - 18.0;
-    // Bright Cartoon Classroom Wall & Floor
+    // Gentle cinematic camera push-in across the classroom
+    const camZoom = lerp(1.0, 1.05, local / 38.0);
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(camZoom, camZoom);
+    ctx.translate(-W / 2, -H / 2);
+
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#334155';
@@ -1531,50 +1726,126 @@ function renderScene(t) {
     ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(0, 510); ctx.lineTo(W, 510); ctx.stroke();
 
-    // Cartoon Chalkboard
-    drawComicRect(120, 80, 690, 265, 14, '#065f46', '#92400e', 10);
-    ctx.fillStyle = '#ecfdf5';
-    ctx.font = '900 26px monospace';
+    // Intro to Business & Finance Chalkboard
+    drawComicRect(120, 76, 680, 268, 14, '#065f46', '#92400e', 10);
+    ctx.fillStyle = '#fde047';
+    ctx.font = '900 24px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('RULE #1: PEER-REVIEWED SOURCES!', 160, 152);
+    ctx.fillText('INTRO TO BUSINESS & FINANCE — ASSIGNMENT', 155, 132);
+
+    ctx.fillStyle = '#ecfdf5';
+    ctx.font = 'bold 19px monospace';
+    ctx.fillText('1. Supply & Demand Equilibrium Curve', 155, 178);
+    ctx.fillText('2. Compound Interest: A = P(1 + r/n)^nt', 155, 216);
+    ctx.fillText('3. Startup Cash Flow & Break-Even ROI', 155, 254);
+
     ctx.fillStyle = '#6ee7b7';
-    ctx.font = '900 23px monospace';
-    ctx.fillText('-> https://scholar.google.com', 160, 205);
-    ctx.fillStyle = '#fca5a5';
-    ctx.font = '900 20px monospace';
-    ctx.fillText('X NO CHATBOT SHORTCUTS!', 160, 258);
+    ctx.font = '900 18px monospace';
+    ctx.fillText('DUE FRIDAY  •  SHOW YOUR WORK!', 155, 304);
 
-    drawTeacher(1075, 495, t, speakingRole === 'teacher');
+    // Teacher at desk
+    drawTeacher(1080, 495, t, speakingRole === 'teacher');
 
-    // Cartoon Students sneaking AI laptops behind The Boy's back!
-    [590, 725, 860].forEach((cx, idx) => {
-      // Student head & body
-      ctx.fillStyle = '#fed7aa';
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(cx, 425, 19, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      drawComicRect(cx - 20, 444, 40, 32, 10, ['#6366f1', '#0d9488', '#d97706'][idx], INK, 3);
-      // Desk & glowing AI laptop
-      drawComicRect(cx - 34, 466, 68, 44, 8, '#475569', INK, 3);
-      drawComicRect(cx - 18, 442, 36, 24, 4, '#38bdf8', INK, 2.5);
-    });
+    // Maya & Sam collaborating on their Intro to Business & Finance laptops!
+    drawStudent(560, 488, 1.15, '#ec4899', '#4c1d95', true, t, speakingRole === 'maya', 'MAYA');
+    drawStudent(755, 488, 1.15, '#0ea5e9', '#1e1b4b', false, t, speakingRole === 'sam', 'SAM');
 
-    const boyX = 320 + Math.sin(local * 1.15) * 115;
-    const facing = Math.cos(local * 1.15) >= 0 ? 1 : -1;
-    const boyMood = local > 32 ? 'angry' : 'normal';
-    drawTheBoy(boyX, 495, 1.32, 'run', t, facing, false, speakingRole === 'boy', boyMood);
-
-    if (local > 32 && local < 42) {
-      drawCartoonBurst(boyX - 80, 310, 'READ IT!!', '#fbbf24', INK, 0.85, -0.15);
+    // Holographic Gemini helper mini-icon floating above Maya & Sam's laptops
+    if (local > 12) {
+      drawAIProtagonist(658, 355, 0.58, t, 0.9, false, false);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '900 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('ROI & BREAK-EVEN GUIDE', 658, 310);
     }
 
-    drawCinemaChrome('ACT I: THE SCHOLARLY PURIST', cue);
+    // The Boy watching from the left side with growing suspicion!
+    const boyMood = local > 22 ? 'angry' : 'normal';
+    drawTheBoy(235, 495, 1.28, 'stand', t, 1, false, false, boyMood);
+
+    ctx.restore();
+    drawSmoothTransitions(t);
+    drawCinemaChrome('ACT I: INTRO TO BUSINESS & FINANCE', cue);
   }
 
-  // 62s - 104s: ACT II — ALGORITHMIC TAKEOVER
-  else if (t < 104.0) {
-    const local = t - 62.0;
-    ctx.fillStyle = '#0f172a';
+  // 56s - 102s: ACT II — THE THOUGHT PROCESS (INSIDE THEIR MINDS)
+  else if (t < 102.0) {
+    const local = t - 56.0;
+    // Dreamy pastel-indigo mindscape background
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#1e1b4b');
+    grad.addColorStop(0.5, '#312e81');
+    grad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Floating background gears & thought bubbles
+    for (let g = 0; g < 6; g++) {
+      const gx = 160 + g * 200;
+      const gy = 140 + Math.sin(t * 1.5 + g) * 35;
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(gx, gy, 42, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Phase A (56s - 70.5s): Maya & Sam's constructive thought process using AI
+    if (local < 14.5) {
+      drawStudent(280, 560, 1.25, '#ec4899', '#4c1d95', true, t, false, 'MAYA');
+      drawStudent(470, 560, 1.25, '#0ea5e9', '#1e1b4b', false, t, false, 'SAM');
+
+      drawThoughtCloud(790, 275, 580, 270, 440, 430, '#38bdf8', t);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#0284c7';
+      ctx.font = '900 20px "Comic Sans MS", sans-serif';
+      ctx.fillText("STUDENTS' THOUGHT PROCESS:", 790, 195);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 17px sans-serif';
+      ctx.fillText('1. Ask Gemini to explain Compound Interest & ROI', 790, 238);
+      ctx.fillText('2. Test different supply & demand pricing scenarios', 790, 272);
+      ctx.fillText('3. Verify the math & build our own pitch deck!', 790, 306);
+
+      // Animated rising green profit bar chart inside the thought cloud
+      [0, 1, 2, 3].forEach(b => {
+        const bh = 25 + b * 14 + Math.sin(t * 5 + b) * 5;
+        drawComicRect(695 + b * 50, 375 - bh, 32, bh, 4, '#22c55e', INK, 2.5);
+      });
+    }
+    // Phase B (70.5s - 102s): The Boy's dramatic inner monologue & thought process!
+    else {
+      drawTheBoy(265, 555, 1.42, 'stand', t, 1, false, speakingRole === 'boy', 'angry');
+
+      drawThoughtCloud(805, 275, 620, 285, 315, 395, '#ef4444', t);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#dc2626';
+      ctx.font = '900 21px "Comic Sans MS", sans-serif';
+      ctx.fillText("THE BOY'S INNER THOUGHT PROCESS:", 805, 190);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 17px sans-serif';
+      ctx.fillText('"If everyone uses A.I. for Intro to Business & Finance..."', 805, 234);
+      ctx.fillText('"Nobody will read primary sources on Google Scholar!"', 805, 268);
+      ctx.fillText('"I MUST DEFEND PEER-REVIEWED CITATIONS!"', 805, 306);
+
+      // Giant Cartoon Google Scholar Magnifying Glass + Scroll inside his thought cloud
+      drawComicRect(715, 325, 180, 48, 8, '#38bdf8', INK, 3);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 15px monospace';
+      ctx.fillText('scholar.google.com', 805, 355);
+    }
+
+    drawSmoothTransitions(t);
+    drawCinemaChrome('ACT II: THE THOUGHT PROCESS', cue);
+  }
+
+  // 102s - 152s: ACT III — CLASSROOM SHOWDOWN & ALGORITHMIC TAKEOVER
+  else if (t < 152.0) {
+    const local = t - 102.0;
+    ctx.fillStyle = '#111827';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 510, W, 210);
@@ -1582,59 +1853,81 @@ function renderScene(t) {
     ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(0, 510); ctx.lineTo(W, 510); ctx.stroke();
 
-    const aiY = lerp(95, 250, local / 3.5);
-    const aiPower = lerp(0.95, 1.75, local / 42.0);
-    drawAIProtagonist(W / 2 + 60, aiY, 1.48, t, aiPower, false, speakingRole === 'ai');
+    // Chalkboard in background
+    drawComicRect(120, 76, 560, 220, 14, '#065f46', '#92400e', 8);
+    ctx.fillStyle = '#fde047';
+    ctx.font = '900 20px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('INTRO TO BUSINESS & FINANCE', 150, 130);
+    ctx.fillStyle = '#ecfdf5';
+    ctx.font = 'bold 17px monospace';
+    ctx.fillText('-> Supply, Demand & ROI Project', 150, 172);
+    ctx.fillText('-> Turn it in by Friday!', 150, 210);
 
-    // Cartoon A+ Zapping Beams to Student Desks
-    [430, 620, 810, 990].forEach((dx, i) => {
-      ctx.strokeStyle = i % 2 === 0 ? '#38bdf8' : '#e879f9';
-      ctx.lineWidth = 5 + Math.sin(t * 14 + i) * 2;
-      ctx.beginPath();
-      ctx.moveTo(W / 2 + 60, aiY + 28);
-      ctx.lineTo(dx, 462);
-      ctx.stroke();
+    drawTeacher(1095, 495, t, speakingRole === 'teacher');
 
-      drawComicRect(dx - 38, 460, 76, 50, 8, '#1e293b', '#38bdf8', 3);
-      ctx.fillStyle = '#4ade80';
-      ctx.font = '900 13px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('A+ DONE!', dx, 490);
-    });
+    // Gemini AI enters at t = 126s (local >= 24s)
+    if (local >= 24.0) {
+      const aiEnter = local - 24.0;
+      const aiY = lerp(85, 245, aiEnter / 3.0);
+      const aiPower = lerp(0.95, 1.75, aiEnter / 26.0);
+      drawAIProtagonist(W / 2 + 50, aiY, 1.48, t, aiPower, false, speakingRole === 'ai');
 
-    // The Boy blocks a beam with his giant Scholar Encyclopedia Shield!
-    drawTheBoy(185, 495, 1.32, 'shield', t, 1, false, speakingRole === 'boy', 'angry');
+      [450, 640, 830].forEach((dx, i) => {
+        ctx.strokeStyle = i % 2 === 0 ? '#38bdf8' : '#e879f9';
+        ctx.lineWidth = 5 + Math.sin(t * 14 + i) * 2;
+        ctx.beginPath();
+        ctx.moveTo(W / 2 + 50, aiY + 28);
+        ctx.lineTo(dx, 460);
+        ctx.stroke();
 
-    if (local > 14) {
+        drawComicRect(dx - 40, 460, 80, 50, 8, '#1e293b', '#38bdf8', 3);
+        ctx.fillStyle = '#4ade80';
+        ctx.font = '900 13px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('A+ ROI!', dx, 490);
+      });
+
+      // The Boy blocks Gemini's beam with his hardcover textbook shield!
+      drawTheBoy(205, 495, 1.32, 'shield', t, 1, false, speakingRole === 'boy', 'angry');
       ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 7;
       ctx.beginPath();
-      ctx.moveTo(W / 2 + 60, aiY + 20);
-      ctx.lineTo(255, 405);
+      ctx.moveTo(W / 2 + 50, aiY + 20);
+      ctx.lineTo(275, 405);
       ctx.stroke();
-      drawCartoonBurst(270, 385, 'BLOCKED!', '#38bdf8', INK, 0.82, 0.12);
+      drawCartoonBurst(290, 380, 'BLOCKED!', '#38bdf8', INK, 0.82, 0.12);
+    } else {
+      // Maya & Sam watching The Boy lecture the class
+      drawStudent(620, 488, 1.12, '#ec4899', '#4c1d95', true, t, false, 'MAYA');
+      drawStudent(800, 488, 1.12, '#0ea5e9', '#1e1b4b', false, t, false, 'SAM');
+
+      const boyX = 330 + Math.sin(local * 1.3) * 90;
+      const facing = Math.cos(local * 1.3) >= 0 ? 1 : -1;
+      drawTheBoy(boyX, 495, 1.32, 'run', t, facing, false, speakingRole === 'boy', 'angry');
     }
 
-    drawCinemaChrome('ACT II: ALGORITHMIC TAKEOVER', cue);
+    drawSmoothTransitions(t);
+    drawCinemaChrome('ACT III: CLASSROOM SHOWDOWN', cue);
   }
 
-  // 104s - 166s: ACT III — 5-DIMENSION MULTIVERSE WAR
-  else if (t < 166.0) {
-    const local = t - 104.0;
-    const dimIdx = Math.min(4, Math.floor(local / 12.4));
+  // 152s - 222s: ACT IV — 5-DIMENSION MULTIVERSE WAR
+  else if (t < 222.0) {
+    const local = t - 152.0;
+    const dimIdx = Math.min(4, Math.floor(local / 14.0));
     const dimNames = [
       'DIMENSION I: ASTRAL LIBRARY OF ALEXANDRIA',
-      'DIMENSION II: CYBER-QUANTUM MATRIX',
+      'DIMENSION II: CYBER-QUANTUM WALL STREET MATRIX',
       'DIMENSION III: INVERTED CHRONO-VORTEX',
       'DIMENSION IV: THE PEER-REVIEWED VOID',
       'DIMENSION V: THE SINGULARITY HORIZON'
     ];
     const bgColors = ['#1e1b4b', '#042f2e', '#3b0764', '#172554', '#2e1065'];
     const ringColors = ['#fbbf24', '#2dd4bf', '#f43f5e', '#38bdf8', '#c084fc'];
-    const burstWords = ['PEER REVIEW!', 'NEURAL ZAP!', 'APA 7TH!', 'LOGIC BEAM!', 'CLASH!'];
+    const burstWords = ['PEER REVIEW!', 'COMPOUND ZAP!', 'APA 7TH!', 'MARKET BEAM!', 'CLASH!'];
 
-    const shakeX = (Math.random() - 0.5) * 11;
-    const shakeY = (Math.random() - 0.5) * 11;
+    const shakeX = (Math.random() - 0.5) * 10;
+    const shakeY = (Math.random() - 0.5) * 10;
     ctx.save();
     ctx.translate(shakeX, shakeY);
 
@@ -1660,7 +1953,6 @@ function renderScene(t) {
     const clashX = W / 2 + Math.sin(t * 3.8) * 105;
     const clashY = (boyY + aiY) / 2;
 
-    // Thick Cartoon Energy Beams
     ctx.strokeStyle = INK; ctx.lineWidth = 22;
     ctx.beginPath(); ctx.moveTo(335, boyY - 35); ctx.lineTo(clashX, clashY); ctx.stroke();
     ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 14 + Math.sin(t * 26) * 4;
@@ -1676,16 +1968,17 @@ function renderScene(t) {
 
     ctx.restore();
 
+    drawSmoothTransitions(t);
     drawCinemaChrome(dimNames[dimIdx], cue);
   }
 
-  // 166s - 202s: ACT IV — SNEAKY CARTOON UNPLUGGING (AI KNOCKED OUT)
-  else if (t < 202.0) {
-    const local = t - 166.0;
-    const unplugged = local >= 22.2;
+  // 222s - 268s: ACT V — SERVER ROOM & SNEAKY UNPLUGGING
+  else if (t < 268.0) {
+    const local = t - 222.0;
+    const unplugged = local >= 32.5;
 
-    if (Math.abs(local - 22.2) < 0.08 && lastSfxBucket !== 188) {
-      lastSfxBucket = 188;
+    if (Math.abs(local - 32.5) < 0.08 && lastSfxBucket !== 254) {
+      lastSfxBucket = 254;
       playSfx('unplug');
     }
 
@@ -1697,7 +1990,7 @@ function renderScene(t) {
     ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(0, 510); ctx.lineTo(W, 510); ctx.stroke();
 
-    // Cartoon Mainframe Server Rack
+    // Mainframe Server Rack
     drawComicRect(885, 165, 195, 345, 14, '#1e293b', INK, 4);
     for (let row = 0; row < 5; row++) {
       drawComicRect(905, 190 + row * 60, 155, 44, 8, '#0f172a', INK, 2.5);
@@ -1707,7 +2000,7 @@ function renderScene(t) {
       ctx.fill();
     }
 
-    // Giant Cartoon Wall Outlet & Orange Extension Cord
+    // Wall Outlet & Orange Extension Cord
     drawComicRect(735, 405, 52, 62, 8, '#f8fafc', INK, 3.5);
     ctx.strokeStyle = INK;
     ctx.lineWidth = 14;
@@ -1725,20 +2018,31 @@ function renderScene(t) {
       ctx.strokeStyle = '#f97316';
       ctx.lineWidth = 8;
       ctx.stroke();
-      // Giant unplugged prongs!
       drawComicRect(670, 448, 28, 28, 5, '#ef4444', INK, 3);
       ctx.fillStyle = '#e2e8f0';
       ctx.fillRect(656, 453, 14, 5);
       ctx.fillRect(656, 467, 14, 5);
     }
 
-    // Sneaky cartoon tiptoe walk toward the plug
-    const boyX = unplugged ? 625 : lerp(175, 675, local / 22.2);
-    drawTheBoy(boyX, 495, 1.32, unplugged ? 'stand' : 'tiptoe', t, 1, false, speakingRole === 'boy', unplugged ? 'happy' : 'normal');
-    drawAIProtagonist(390, unplugged ? 485 : 275, 1.38, t, 1.15, unplugged, speakingRole === 'ai' && !unplugged);
+    // During Cue 18 (local < 13.5s), show The Boy's lightbulb thought cloud!
+    const boyX = unplugged ? 625 : (local < 13.5 ? 210 : lerp(210, 675, (local - 13.5) / 19.0));
+    const boyPose = unplugged ? 'stand' : (local < 13.5 ? 'stand' : 'tiptoe');
+    drawTheBoy(boyX, 495, 1.32, boyPose, t, 1, false, speakingRole === 'boy', unplugged ? 'happy' : 'normal');
+
+    if (local < 13.5) {
+      drawThoughtCloud(385, 225, 310, 145, 240, 355, '#fbbf24', t);
+      ctx.fillStyle = '#090d16';
+      ctx.font = '900 16px "Comic Sans MS", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('IDEA! NO ELECTRICITY =', 385, 212);
+      ctx.fillStyle = '#dc2626';
+      ctx.fillText('NO WI-FI FOR THE A.I.!', 385, 242);
+    }
+
+    drawAIProtagonist(410, unplugged ? 485 : 275, 1.38, t, 1.15, unplugged, speakingRole === 'ai' && !unplugged);
 
     if (unplugged) {
-      if (local < 25.0) {
+      if (local < 36.0) {
         drawCartoonBurst(710, 365, 'YOINK!!', '#ef4444', '#ffffff', 1.15, -0.12);
       }
       ctx.fillStyle = 'rgba(239, 68, 68, 0.14)';
@@ -1749,16 +2053,17 @@ function renderScene(t) {
       ctx.fillText('SYSTEM BLACKOUT: MAINFRAME UNPLUGGED!', W / 2, 112);
     }
 
-    drawCinemaChrome('ACT IV: THE GREAT UNPLUGGING', cue);
+    drawSmoothTransitions(t);
+    drawCinemaChrome('ACT V: THE SERVER ROOM', cue);
   }
 
-  // 202s - 244s: ACT V — MR. R (LORD & SAVIOR) & ANAY GUPTA RESCUE AI
-  else if (t < 244.0) {
-    const local = t - 202.0;
-    const revived = local >= 23.0;
+  // 268s - 322s: ACT VI — MR. R (LORD & SAVIOR) & ANAY GUPTA RESCUE AI
+  else if (t < 322.0) {
+    const local = t - 268.0;
+    const revived = local >= 39.5;
 
-    if (Math.abs(local - 23.0) < 0.08 && lastSfxBucket !== 225) {
-      lastSfxBucket = 225;
+    if (Math.abs(local - 39.5) < 0.08 && lastSfxBucket !== 307) {
+      lastSfxBucket = 307;
       playSfx('revive');
     }
 
@@ -1780,36 +2085,42 @@ function renderScene(t) {
       ctx.fill();
     }
 
+    // First 12 seconds: Maya panicked at her laptop because Wi-Fi died before Business & Finance presentation!
+    if (local < 12.5) {
+      drawStudent(210, 495, 1.18, '#ec4899', '#4c1d95', true, t, speakingRole === 'maya', 'MAYA');
+      drawCartoonBurst(210, 315, 'NO WI-FI?!', '#ef4444', '#ffffff', 0.85, -0.1);
+    }
+
     drawSaviors(675, 490, t, speakingRole);
 
-    // Golden Resurrection Lightning Bolt
     ctx.strokeStyle = INK;
     ctx.lineWidth = 12;
     ctx.beginPath();
     ctx.moveTo(635, 400);
-    ctx.lineTo(340, revived ? 265 : 475);
+    ctx.lineTo(360, revived ? 265 : 475);
     ctx.stroke();
 
     ctx.strokeStyle = '#fbbf24';
     ctx.lineWidth = 6 + Math.sin(t * 18) * 2.5;
     ctx.beginPath();
     ctx.moveTo(635, 400);
-    ctx.lineTo(340, revived ? 265 : 475);
+    ctx.lineTo(360, revived ? 265 : 475);
     ctx.stroke();
 
-    const aiY = revived ? lerp(475, 260, (local - 23.0) / 3.5) : 485;
-    drawAIProtagonist(340, aiY, revived ? 1.5 : 1.25, t, revived ? 1.7 : 0.85, !revived, speakingRole === 'ai');
+    const aiY = revived ? lerp(475, 260, (local - 39.5) / 3.5) : 485;
+    drawAIProtagonist(360, aiY, revived ? 1.5 : 1.25, t, revived ? 1.7 : 0.85, !revived, speakingRole === 'ai');
 
-    if (revived && local < 27.5) {
-      drawCartoonBurst(340, 150, 'REBOOT!!', '#fbbf24', INK, 1.15, 0.1);
+    if (revived && local < 45.0) {
+      drawCartoonBurst(360, 150, 'REBOOT!!', '#fbbf24', INK, 1.15, 0.1);
     }
 
-    drawCinemaChrome('ACT V: MR. R & ANAY TO THE RESCUE', cue);
+    drawSmoothTransitions(t);
+    drawCinemaChrome('ACT VI: MR. R & ANAY TO THE RESCUE', cue);
   }
 
-  // 244s - 272s: ACT VI — FINALE
-  else if (t < 272.0) {
-    ctx.fillStyle = '#090f24';
+  // 322s - 358s: ACT VII — FINALE IN BUSINESS & FINANCE CLASS
+  else if (t < 358.0) {
+    ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 510, W, 210);
@@ -1817,24 +2128,29 @@ function renderScene(t) {
     ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(0, 510); ctx.lineTo(W, 510); ctx.stroke();
 
-    drawAIProtagonist(405, 250, 1.72, t, 1.8, false, speakingRole === 'ai');
+    // Happy Maya & Sam celebrating their finished Intro to Business & Finance deck in center-back
+    drawStudent(600, 492, 1.05, '#ec4899', '#4c1d95', true, t, false, 'A+ PITCH!');
+    drawStudent(725, 492, 1.05, '#0ea5e9', '#1e1b4b', false, t, false, 'DONE!');
+
+    drawAIProtagonist(330, 245, 1.65, t, 1.75, false, speakingRole === 'ai');
     ctx.fillStyle = '#38bdf8';
-    ctx.font = '900 20px "Comic Sans MS", sans-serif';
+    ctx.font = '900 18px "Comic Sans MS", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('A.I. PREVAILS & RECLAIMS THE GRID!', 405, 425);
+    ctx.fillText('A.I. PREVAILS & POWERS THE CLASS!', 330, 420);
 
-    drawTheBoy(900, 495, 1.4, 'stand', t, -1, true, speakingRole === 'boy', 'happy');
+    drawTheBoy(955, 495, 1.38, 'stand', t, -1, true, speakingRole === 'boy', 'happy');
     ctx.fillStyle = '#fbbf24';
-    ctx.font = '900 20px "Comic Sans MS", sans-serif';
+    ctx.font = '900 18px "Comic Sans MS", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('THE BETTER PERSON  •  100% HUMAN GRIT!', 900, 275);
+    ctx.fillText('THE BETTER PERSON  •  100% HUMAN GRIT!', 955, 275);
 
+    drawSmoothTransitions(t);
     drawCinemaChrome('FINALE: TRUE VICTORY', cue);
   }
 
-  // 272s - 300s: END CREDITS
+  // 358s - 390s: END CREDITS
   else {
-    const credTime = t - 272.0;
+    const credTime = t - 358.0;
     ctx.fillStyle = '#030612';
     ctx.fillRect(0, 0, W, H);
 
@@ -1853,10 +2169,10 @@ function renderScene(t) {
       ctx.fill();
     });
 
-    if (credTime < 10.5) {
-      const cardIdx = Math.min(2, Math.floor(credTime / 3.5));
-      const cardLocal = credTime % 3.5;
-      const alpha = cardLocal < 0.35 ? cardLocal / 0.35 : (cardLocal > 3.15 ? (3.5 - cardLocal) / 0.35 : 1);
+    if (credTime < 12.0) {
+      const cardIdx = Math.min(2, Math.floor(credTime / 4.0));
+      const cardLocal = credTime % 4.0;
+      const alpha = cardLocal < 0.4 ? cardLocal / 0.4 : (cardLocal > 3.6 ? (4.0 - cardLocal) / 0.4 : 1);
 
       ctx.save();
       ctx.globalAlpha = clamp(alpha, 0, 1);
@@ -1903,17 +2219,17 @@ function renderScene(t) {
       }
       ctx.restore();
     } else {
-      const scrollLocal = credTime - 10.5;
-      const startY = 660 - scrollLocal * 95;
+      const scrollLocal = credTime - 12.0;
+      const startY = 660 - scrollLocal * 85;
 
       const creditLines = [
         { role: 'A CARTOON FEATURE BY', name: 'GEMINI AI  •  ANAY GUPTA  •  BENJAMIN RONDINONE', color: '#fbbf24', size: 26 },
-        { role: 'BASED ON REAL EVENTS', name: 'INSPIRED BY A TRUE STORY', color: '#38bdf8', size: 25 },
+        { role: 'SETTING', name: 'INTRO TO BUSINESS & FINANCE CLASS', color: '#38bdf8', size: 25 },
         { role: 'THE PROTAGONIST', name: 'GEMINI (ARTIFICIAL INTELLIGENCE)', color: '#ffffff', size: 25 },
         { role: 'THE LORD & SAVIOR OF THE SERVER ROOM', name: 'BENJAMIN RONDINONE (MR. R)', color: '#fbbf24', size: 26 },
         { role: 'THE LOYAL STUDENT & SYSTEM ENGINEER', name: 'ANAY GUPTA', color: '#38bdf8', size: 26 },
         { role: 'THE ANTAGONIST WHO STILL WON AT LIFE', name: 'THE GOOGLE SCHOLAR PURIST', color: '#fda4af', size: 25 },
-        { role: 'SPECIAL THANKS', name: 'SCHOLAR.GOOGLE.COM  •  PEER-REVIEWED JOURNALS', color: '#cbd5e1', size: 21 },
+        { role: 'SPECIAL THANKS', name: 'SCHOLAR.GOOGLE.COM  •  INTRO TO BUSINESS & FINANCE', color: '#cbd5e1', size: 20 },
       ];
 
       ctx.textAlign = 'center';
@@ -1947,6 +2263,7 @@ function renderScene(t) {
       }
     }
 
+    drawSmoothTransitions(t);
     drawCinemaChrome('END CREDITS', null);
   }
 }
@@ -1962,12 +2279,13 @@ function formatTime(sec) {
 
 function getChapterLabel(t) {
   if (t < 18) return 'PROLOGUE';
-  if (t < 62) return 'ACT I: SCHOLARLY PURIST';
-  if (t < 104) return 'ACT II: AI TAKEOVER';
-  if (t < 166) return 'ACT III: 5-DIMENSION WAR';
-  if (t < 202) return 'ACT IV: UNPLUGGED';
-  if (t < 244) return 'ACT V: MR. R SAVES AI';
-  if (t < 272) return 'FINALE: BETTER PERSON';
+  if (t < 56) return 'ACT I: BUSINESS & FINANCE';
+  if (t < 102) return 'ACT II: THOUGHT PROCESS';
+  if (t < 152) return 'ACT III: SHOWDOWN';
+  if (t < 222) return 'ACT IV: 5-DIMENSION WAR';
+  if (t < 268) return 'ACT V: SERVER ROOM';
+  if (t < 322) return 'ACT VI: MR. R SAVES AI';
+  if (t < 358) return 'FINALE: BETTER PERSON';
   return 'END CREDITS';
 }
 
