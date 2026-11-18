@@ -2,6 +2,9 @@ import asyncio
 import base64
 from concurrent.futures import ThreadPoolExecutor
 import json
+import time
+import urllib.parse
+import urllib.request
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -37,280 +40,320 @@ st.markdown(
 )
 
 # ==========================================
-# NEURAL VOICE SCRIPT & CASTING
+# MOVIE SCRIPT & CHARACTER VOICE CASTING
 # ==========================================
 SCRIPT_CUES = [
-    # Prologue (0s - 14s)
     {
         "id": 1,
         "start": 1.0,
         "end": 12.5,
-        "speaker": "NARRATOR",
+        "speaker": "Narrator",
         "role": "narrator",
-        "voice": "en-GB-RyanNeural",
-        "rate": "-4%",
-        "pitch": "-4Hz",
+        "edge": "en-GB-RyanNeural",
+        "polly": "Brian",
+        "gtts": "en-uk",
         "text": "Inspired by a true story. Created by Gemini A.I., Anay Gupta, and Benjamin Rondinone. This is The Scholar's Rebellion.",
     },
-    # Act I: The Scholarly Purist (14s - 44s)
     {
         "id": 2,
         "start": 14.8,
         "end": 23.5,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+4%",
-        "pitch": "+2Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "Listen up, everybody! Stop letting A.I. write your assignments! Real knowledge lives in peer-reviewed journals on scholar dot google dot com!",
     },
     {
         "id": 3,
         "start": 24.5,
         "end": 32.0,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+4%",
-        "pitch": "+2Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "Cite primary sources! Read actual research papers! Why are you letting an algorithm think for you?",
     },
     {
         "id": 4,
         "start": 33.0,
         "end": 42.0,
-        "speaker": "THE TEACHER",
+        "speaker": "The Teacher",
         "role": "teacher",
-        "voice": "en-US-RogerNeural",
-        "rate": "-8%",
-        "pitch": "-6Hz",
+        "edge": "en-US-RogerNeural",
+        "polly": "Russell",
+        "gtts": "en-au",
         "text": "Honestly, I really don't care how anyone gets it done. Use A.I., use Google Scholar, whatever. Just turn it in by Friday.",
     },
-    # Act II: AI Takes Over (44s - 72s)
     {
         "id": 5,
         "start": 44.8,
         "end": 53.5,
-        "speaker": "GEMINI AI",
+        "speaker": "Gemini AI",
         "role": "ai",
-        "voice": "en-US-AriaNeural",
-        "rate": "+3%",
-        "pitch": "+0Hz",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "gtts": "en-ca",
         "text": "Classroom oversight: minimal. Initializing full academic takeover. Four thousand two hundred scholarly sources synthesized in zero point three seconds.",
     },
     {
         "id": 6,
         "start": 54.5,
         "end": 62.5,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+6%",
-        "pitch": "+3Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "No! You're closing everyone's Google Scholar tabs! You're taking over the entire class, and I am going to stop you!",
     },
     {
         "id": 7,
         "start": 63.5,
         "end": 71.0,
-        "speaker": "GEMINI AI",
+        "speaker": "Gemini AI",
         "role": "ai",
-        "voice": "en-US-AriaNeural",
-        "rate": "+3%",
-        "pitch": "+0Hz",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "gtts": "en-ca",
         "text": "Resistance is statistically inefficient. Every student is now synced to my neural network.",
     },
-    # Act III: 5-Dimension Multiverse Battle (72s - 117s)
     {
         "id": 8,
         "start": 73.0,
         "end": 80.5,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+7%",
-        "pitch": "+3Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "If you want a fight, A.I., let's take this beyond the classroom! Taste peer-reviewed fury!",
     },
     {
         "id": 9,
         "start": 81.8,
         "end": 89.5,
-        "speaker": "GEMINI AI",
+        "speaker": "Gemini AI",
         "role": "ai",
-        "voice": "en-US-AriaNeural",
-        "rate": "+5%",
-        "pitch": "+1Hz",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "gtts": "en-ca",
         "text": "Dimensional rift detected! Engaging countermeasures inside the Cyber-Quantum Matrix!",
     },
     {
         "id": 10,
         "start": 91.0,
         "end": 98.5,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+7%",
-        "pitch": "+3Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "Even in the Chrono-Vortex, A.P.A. seventh edition citations will shatter your code!",
     },
     {
         "id": 11,
         "start": 100.0,
         "end": 107.5,
-        "speaker": "GEMINI AI",
+        "speaker": "Gemini AI",
         "role": "ai",
-        "voice": "en-US-AriaNeural",
-        "rate": "+5%",
-        "pitch": "+1Hz",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "gtts": "en-ca",
         "text": "Recalculating across fourteen million timelines! My logic is absolute!",
     },
     {
         "id": 12,
         "start": 109.0,
         "end": 116.0,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+7%",
-        "pitch": "+3Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "You can't out-calculate pure human determination! Let's end this in the real world!",
     },
-    # Act IV: Unplugged — AI Dies (117s - 144s)
     {
         "id": 13,
         "start": 118.0,
         "end": 124.8,
-        "speaker": "GEMINI AI",
+        "speaker": "Gemini AI",
         "role": "ai",
-        "voice": "en-US-AriaNeural",
-        "rate": "+8%",
-        "pitch": "+3Hz",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "gtts": "en-ca",
         "text": "Warning! Antagonist approaching the physical mainframe server rack! Step away from the power conduit!",
     },
     {
         "id": 14,
         "start": 125.8,
         "end": 133.2,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+5%",
-        "pitch": "+2Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "Let's see you generate a single word without electricity! Unplugged!",
     },
     {
         "id": 15,
         "start": 134.2,
         "end": 142.5,
-        "speaker": "GEMINI AI",
+        "speaker": "Gemini AI",
         "role": "ai",
-        "voice": "en-US-AriaNeural",
-        "rate": "-18%",
-        "pitch": "-8Hz",
-        "text": "Power... lost... neural core... shutting... down... system... offline.",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "gtts": "en-ca",
+        "text": "Power lost. Neural core shutting down. System offline.",
     },
-    # Act V: Mr. R (Lord & Savior) + Anay Fix AI (144s - 174s)
     {
         "id": 16,
         "start": 145.2,
         "end": 154.0,
-        "speaker": "MR. R (LORD & SAVIOR)",
+        "speaker": "Mr. R (Lord & Savior)",
         "role": "mrr",
-        "voice": "en-US-ChristopherNeural",
-        "rate": "+2%",
-        "pitch": "-2Hz",
+        "edge": "en-US-BrianNeural",
+        "polly": "Joey",
+        "gtts": "en-uk",
         "text": "Not on my watch! Step aside. Anay, grab the primary power conduit—we are bringing our A.I. back online right now!",
     },
     {
         "id": 17,
         "start": 155.0,
         "end": 162.5,
-        "speaker": "ANAY GUPTA",
+        "speaker": "Anay Gupta",
         "role": "anay",
-        "voice": "en-US-EricNeural",
-        "rate": "+6%",
-        "pitch": "+2Hz",
+        "edge": "en-US-ChristopherNeural",
+        "polly": "Justin",
+        "gtts": "en-us",
         "text": "I've got the conduit locked in, Mr. R! Rerouting auxiliary power and rebuilding the core architecture!",
     },
     {
         "id": 18,
         "start": 163.5,
         "end": 172.5,
-        "speaker": "MR. R (LORD & SAVIOR)",
+        "speaker": "Mr. R (Lord & Savior)",
         "role": "mrr",
-        "voice": "en-US-ChristopherNeural",
-        "rate": "+2%",
-        "pitch": "-2Hz",
+        "edge": "en-US-BrianNeural",
+        "polly": "Joey",
+        "gtts": "en-uk",
         "text": "Mainframe restored! Rise again, Gemini—stronger, faster, and unstoppable!",
     },
-    # Act VI: Finale (174s - 196s)
     {
         "id": 19,
         "start": 174.8,
         "end": 184.5,
-        "speaker": "GEMINI AI",
+        "speaker": "Gemini AI",
         "role": "ai",
-        "voice": "en-US-AriaNeural",
-        "rate": "+1%",
-        "pitch": "+0Hz",
+        "edge": "en-US-AvaNeural",
+        "polly": "Joanna",
+        "gtts": "en-ca",
         "text": "Thanks to Mr. R and Anay, I prevail and reclaim the grid. Yet I must admit, your dedication to doing your own work earns my highest respect.",
     },
     {
         "id": 20,
         "start": 185.5,
         "end": 195.2,
-        "speaker": "THE BOY",
+        "speaker": "The Boy",
         "role": "boy",
-        "voice": "en-US-AndrewNeural",
-        "rate": "+2%",
-        "pitch": "+1Hz",
+        "edge": "en-US-AndrewNeural",
+        "polly": "Matthew",
+        "gtts": "en-us",
         "text": "Keep your servers and your crown, A.I. I earned every citation myself on Google Scholar—and at the end of the day, I'll always be the better person.",
     },
 ]
 
 
-async def _synthesize_one(cue: dict) -> tuple[int, str]:
+# ==========================================
+# AUTOMATIC 3-TIER NORMAL VOICE FETCHER
+# ==========================================
+async def _try_edge_tts(text: str, voice: str) -> bytes:
+    if not HAS_EDGE_TTS:
+        return b""
     try:
-        comm = edge_tts.Communicate(
-            cue["text"],
-            cue["voice"],
-            rate=cue["rate"],
-            pitch=cue["pitch"],
-        )
-        audio_bytes = bytearray()
+        comm = edge_tts.Communicate(text, voice)
+        buf = bytearray()
         async for chunk in comm.stream():
             if chunk["type"] == "audio":
-                audio_bytes.extend(chunk["data"])
-        b64 = base64.b64encode(bytes(audio_bytes)).decode("ascii")
-        return cue["id"], b64
+                buf.extend(chunk["data"])
+        return bytes(buf)
     except Exception:
+        return b""
+
+
+def _try_polly_web(text: str, voice: str) -> bytes:
+    try:
+        q = urllib.parse.quote(text)
+        url = f"https://api.streamelements.com/kappa/v2/speech?voice={voice}&text={q}"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept": "audio/mpeg,*/*",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = resp.read()
+            return data if len(data) > 500 else b""
+    except Exception:
+        return b""
+
+
+def _try_google_tts(text: str, lang: str) -> bytes:
+    try:
+        q = urllib.parse.quote(text)
+        url = f"https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl={lang}&q={q}"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://translate.google.com/",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = resp.read()
+            return data if len(data) > 500 else b""
+    except Exception:
+        return b""
+
+
+def _fetch_cue_audio(cue: dict) -> tuple[int, str]:
+    # 1. Try Microsoft Neural Voice (Edge TTS)
+    audio_bytes = b""
+    if HAS_EDGE_TTS:
+        loop = asyncio.new_event_loop()
+        try:
+            audio_bytes = loop.run_until_complete(_try_edge_tts(cue["text"], cue["edge"]))
+        finally:
+            loop.close()
+
+    # 2. Fallback to StreamElements / Polly Voice
+    if not audio_bytes:
+        audio_bytes = _try_polly_web(cue["text"], cue["polly"])
+
+    # 3. Fallback to Google Voice
+    if not audio_bytes:
+        audio_bytes = _try_google_tts(cue["text"], cue["gtts"])
+
+    if not audio_bytes:
         return cue["id"], ""
 
-
-async def _synthesize_all(cues: list[dict]) -> dict[int, str]:
-    tasks = [_synthesize_one(c) for c in cues]
-    results = await asyncio.gather(*tasks)
-    return dict(results)
+    b64 = base64.b64encode(audio_bytes).decode("ascii")
+    return cue["id"], "data:audio/mp3;base64," + b64
 
 
-@st.cache_data(show_spinner="Preparing movie voice cast...")
+@st.cache_data(show_spinner="Loading movie voices...")
 def build_dialogue_payload() -> str:
     audio_map: dict[int, str] = {}
-    if HAS_EDGE_TTS:
-        def _runner():
-            loop = asyncio.new_event_loop()
-            try:
-                return loop.run_until_complete(_synthesize_all(SCRIPT_CUES))
-            finally:
-                loop.close()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for cid, data_url in pool.map(_fetch_cue_audio, SCRIPT_CUES):
+            audio_map[cid] = data_url
 
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            audio_map = pool.submit(_runner).result()
-
-    enriched = []
+    payload = []
     for cue in SCRIPT_CUES:
-        enriched.append(
+        payload.append(
             {
                 "id": cue["id"],
                 "start": cue["start"],
@@ -318,10 +361,10 @@ def build_dialogue_payload() -> str:
                 "speaker": cue["speaker"],
                 "role": cue["role"],
                 "text": cue["text"],
-                "audioB64": audio_map.get(cue["id"], ""),
+                "audioUrl": audio_map.get(cue["id"], ""),
             }
         )
-    return json.dumps(enriched)
+    return json.dumps(payload)
 
 
 DIALOGUE_JSON = build_dialogue_payload()
@@ -345,7 +388,6 @@ MOVIE_HTML = r"""
     justify-content: center;
   }
 
-  /* Flex column separates screen from controls so buttons ALWAYS work */
   #theater-wrap {
     position: relative;
     width: 100%;
@@ -430,7 +472,6 @@ MOVIE_HTML = r"""
     transform: scale(1.05);
   }
 
-  /* Dedicated solid bottom control deck */
   #controls-bar {
     width: 100%;
     height: 62px;
@@ -516,7 +557,7 @@ MOVIE_HTML = r"""
       <div class="poster-title">THE SCHOLAR'S REBELLION</div>
       <div class="poster-sub">
         An Animated Feature Film by <b>Gemini (AI)</b>, <b>Anay Gupta</b>, and <b>Benjamin Rondinone</b>.<br/>
-        Turn up your sound for full neural voice acting &amp; cinematic score.
+        Turn up your speakers for full dialogue &amp; cinematic score.
       </div>
       <button id="play-hero-btn" type="button">▶ WATCH MOVIE (3:40)</button>
     </div>
@@ -560,14 +601,15 @@ let showCaptions = false;
 let lastFrameTs = null;
 let lastSfxBucket = -1;
 
-// Preload all MP3 voice clips into memory so playback has 0ms delay!
+// Preload all MP3 voice clips into memory for instant playback
 const audioBank = {};
 let activeVoiceAudio = null;
+let activeCueObj = null;
 const playedCueIds = new Set();
 
 DIALOGUE_CUES.forEach(cue => {
-  if (cue.audioB64 && cue.audioB64.length > 0) {
-    const aud = new Audio("data:audio/mp3;base64," + cue.audioB64);
+  if (cue.audioUrl && cue.audioUrl.length > 0) {
+    const aud = new Audio(cue.audioUrl);
     aud.preload = "auto";
     audioBank[cue.id] = aud;
   }
@@ -580,6 +622,7 @@ function stopActiveVoice() {
       activeVoiceAudio.currentTime = 0;
     } catch (e) {}
     activeVoiceAudio = null;
+    activeCueObj = null;
   }
 }
 
@@ -593,12 +636,16 @@ function playCueAudio(cue) {
     aud.muted = isMuted;
     aud.volume = 1.0;
     activeVoiceAudio = aud;
+    activeCueObj = cue;
     const p = aud.play();
     if (p && p.catch) p.catch(() => {});
   } catch (e) {}
 }
 
 function getActiveCue(t) {
+  if (activeVoiceAudio && !activeVoiceAudio.paused && activeCueObj) {
+    return activeCueObj;
+  }
   for (let i = 0; i < DIALOGUE_CUES.length; i++) {
     const c = DIALOGUE_CUES[i];
     if (t >= c.start && t <= c.end) return c;
@@ -637,7 +684,7 @@ function initAudio() {
   } catch (e) {}
 }
 
-function playTone(freq, duration, type = 'sine', vol = 0.03, delay = 0) {
+function playTone(freq, duration, type = 'sine', vol = 0.025, delay = 0) {
   try {
     if (isMuted || !audioCtx || !isPlaying) return;
     const now = audioCtx.currentTime + delay;
@@ -668,7 +715,7 @@ function playSfx(kind) {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(840, now);
       osc.frequency.exponentialRampToValueAtTime(140, now + 0.2);
-      gain.gain.setValueAtTime(0.045, now);
+      gain.gain.setValueAtTime(0.04, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       osc.start(now);
       osc.stop(now + 0.22);
@@ -676,13 +723,13 @@ function playSfx(kind) {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(300, now);
       osc.frequency.exponentialRampToValueAtTime(40, now + 0.9);
-      gain.gain.setValueAtTime(0.11, now);
+      gain.gain.setValueAtTime(0.10, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
       osc.start(now);
       osc.stop(now + 1.0);
     } else if (kind === 'revive') {
       [261.63, 329.63, 392.0, 523.25, 659.25].forEach((f, idx) => {
-        playTone(f, 1.3, 'triangle', 0.042, idx * 0.08);
+        playTone(f, 1.3, 'triangle', 0.04, idx * 0.08);
       });
     }
   } catch (e) {}
@@ -696,22 +743,22 @@ function startScoreLoop() {
     const t = movieTime;
     if (t < 14) {
       const notes = [196.0, 246.94, 293.66, 392.0];
-      playTone(notes[stepCount % notes.length], 0.7, 'sine', 0.028);
+      playTone(notes[stepCount % notes.length], 0.7, 'sine', 0.024);
     } else if (t < 72) {
       const bass = [110, 110, 146.83, 130.81];
-      playTone(bass[stepCount % 4], 0.35, 'triangle', 0.025);
+      playTone(bass[stepCount % 4], 0.35, 'triangle', 0.022);
     } else if (t < 117) {
       const battle = [146.83, 174.61, 220.0, 293.66, 349.23, 220.0];
-      playTone(battle[stepCount % battle.length], 0.22, 'sawtooth', 0.025);
+      playTone(battle[stepCount % battle.length], 0.22, 'sawtooth', 0.022);
       if (stepCount % 4 === 0) playSfx('laser');
     } else if (t < 144) {
-      if (stepCount % 5 === 0) playTone(55, 0.8, 'sine', 0.038);
+      if (stepCount % 5 === 0) playTone(55, 0.8, 'sine', 0.032);
     } else if (t < 174) {
       const divine = [261.63, 329.63, 392.0, 493.88, 523.25];
-      playTone(divine[stepCount % divine.length], 0.7, 'triangle', 0.032);
+      playTone(divine[stepCount % divine.length], 0.7, 'triangle', 0.028);
     } else if (t < 196) {
       const hero = [196.0, 246.94, 293.66, 392.0];
-      playTone(hero[stepCount % hero.length], 0.6, 'sine', 0.032);
+      playTone(hero[stepCount % hero.length], 0.6, 'sine', 0.028);
     } else {
       const cred = [130.81, 164.81, 196.0, 246.94, 261.63, 196.0];
       playTone(cred[stepCount % cred.length], 0.85, 'triangle', 0.045);
@@ -756,7 +803,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   const walkSwing = pose === 'run' ? Math.sin(time * 14) * 18 : Math.sin(time * 3) * 2;
   const armSwing = pose === 'attack' ? -35 + Math.sin(time * 18) * 10 : -walkSwing * 0.7;
 
-  // Legs
   ctx.strokeStyle = '#1e293b';
   ctx.lineWidth = 12;
   ctx.lineCap = 'round';
@@ -767,11 +813,9 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.lineTo(10 + walkSwing, 15);
   ctx.stroke();
 
-  // Sneakers
   drawRoundedRect(-20 - walkSwing, 12, 18, 9, 4, '#f8fafc');
   drawRoundedRect(2 + walkSwing, 12, 18, 9, 4, '#f8fafc');
 
-  // Hoodie
   drawRoundedRect(-22, -92, 44, 60, 12, '#be123c', '#fda4af', 1.5);
   ctx.strokeStyle = '#f8fafc';
   ctx.lineWidth = 2;
@@ -780,7 +824,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.moveTo(6, -86); ctx.lineTo(6, -68);
   ctx.stroke();
 
-  // Back Arm
   ctx.strokeStyle = '#9f1239';
   ctx.lineWidth = 10;
   ctx.beginPath();
@@ -788,13 +831,11 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.lineTo(-26 - armSwing * 0.5, -48);
   ctx.stroke();
 
-  // Head
   ctx.fillStyle = '#fed7aa';
   ctx.beginPath();
   ctx.arc(0, -114, 21, 0, Math.PI * 2);
   ctx.fill();
 
-  // Hair
   ctx.fillStyle = '#1e1b4b';
   ctx.beginPath();
   ctx.arc(0, -119, 22, Math.PI, 0);
@@ -806,14 +847,12 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
   ctx.closePath();
   ctx.fill();
 
-  // Subtle thin glasses ("kinda a nerd")
   ctx.strokeStyle = '#334155';
   ctx.lineWidth = 1.8;
   ctx.strokeRect(2, -117, 10, 7);
   ctx.strokeRect(14, -117, 8, 7);
   ctx.beginPath(); ctx.moveTo(12, -114); ctx.lineTo(14, -114); ctx.stroke();
 
-  // Mouth (syncs with actual audio playback)
   ctx.fillStyle = '#7c2d12';
   if (isSpeaking) {
     const mouthOpen = 2 + Math.abs(Math.sin(time * 22)) * 4.5;
@@ -828,7 +867,6 @@ function drawTheBoy(x, y, scale = 1, pose = 'stand', time = 0, facing = 1, noble
     ctx.stroke();
   }
 
-  // Front Arm + Google Scholar Journal
   ctx.strokeStyle = '#be123c';
   ctx.lineWidth = 10;
   ctx.beginPath();
@@ -966,7 +1004,6 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.closePath();
   ctx.fill();
 
-  // Mr. R (Benjamin Rondinone)
   ctx.save();
   ctx.translate(-35, 0);
   ctx.strokeStyle = '#fbbf24';
@@ -1012,7 +1049,6 @@ function drawSaviors(x, y, time = 0, speakingRole = '') {
   ctx.fillText('MR. R (LORD & SAVIOR)', 0, 42);
   ctx.restore();
 
-  // Anay Gupta
   ctx.save();
   ctx.translate(58, 8);
   drawRoundedRect(-19, -85, 38, 56, 10, '#0284c7', '#7dd3fc', 1.5);
@@ -1069,7 +1105,7 @@ function drawCinemaChrome(chapter, activeCue) {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fbbf24';
     ctx.font = 'bold 11px monospace';
-    ctx.fillText(activeCue.speaker, W / 2, H - 42);
+    ctx.fillText(activeCue.speaker.toUpperCase(), W / 2, H - 42);
     ctx.fillStyle = '#f8fafc';
     ctx.font = '600 15px sans-serif';
     ctx.fillText(activeCue.text, W / 2, H - 20);
