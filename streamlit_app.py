@@ -2,8 +2,9 @@ import json
 import streamlit as st
 import streamlit.components.v1 as components
 
-from movie_art import MOVIE_HTML_PART1
+from movie_cast import MOVIE_CAST_JS
 from movie_scenes import MOVIE_JS_PART2
+from movie_ui import MOVIE_UI_HTML
 from script_data import SCRIPT_CUES
 
 st.set_page_config(
@@ -32,7 +33,8 @@ st.markdown(
 )
 
 FULL_MOVIE_HTML = (
-    MOVIE_HTML_PART1.replace("__DIALOGUE_JSON__", json.dumps(SCRIPT_CUES))
+    MOVIE_UI_HTML.replace("__DIALOGUE_JSON__", json.dumps(SCRIPT_CUES))
+    + MOVIE_CAST_JS
     + MOVIE_JS_PART2
 )
 
