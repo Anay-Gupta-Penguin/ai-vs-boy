@@ -107,8 +107,8 @@ function renderAct2(t, cue, speakingRole) {
     }
 
     if (local < 14.0) {
-      drawStudent(155, 530, 0.95, '#a855f7', '#1e1b4b', true, t, speakingRole === 'aisquad', 'AI SQUAD');
-      drawStudent(260, 530, 0.95, '#f43f5e', '#451a03', false, t, speakingRole === 'aisquad', 'AI SQUAD');
+      drawStudent(145, 530, 0.92, '#a855f7', '#1e1b4b', true, t, speakingRole === 'aisquad', 'AI CROWD');
+      drawStudent(250, 530, 0.92, '#f43f5e', '#451a03', false, t, speakingRole === 'aisquad', 'AI CROWD');
     }
 
     drawSaviors(675, 525, t, speakingRole);
@@ -117,7 +117,7 @@ function renderAct2(t, cue, speakingRole) {
     drawAIProtagonist(370, aiY, revived ? 1.45 : 1.25, t, revived ? 1.55 : 0.85, !revived, speakingRole === 'ai');
 
     if (cue) {
-      if (cue.role === 'maya' || cue.role === 'aisquad') { speakerX = 205; speakerY = 395; }
+      if (cue.role === 'aisquad') { speakerX = 200; speakerY = 395; }
       else if (cue.role === 'mrr') { speakerX = 635; speakerY = 355; }
       else if (cue.role === 'anay') { speakerX = 740; speakerY = 375; }
     }
@@ -127,18 +127,18 @@ function renderAct2(t, cue, speakingRole) {
   else if (t < 358.0) {
     drawClassroomBackdrop(
       'INTRO TO BUSINESS & FINANCE — ALL PITCHES COMPLETE!',
-      '• Anay & The Scholar: Built From Scratch (A+ ✓)',
-      '• Lesson Learned: Actually Learn — Don’t Blindly Copy-Paste!'
+      '• Anay, The Scholar & Fast 5: Built Without AI (A+ ✓)',
+      '• Lesson Learned: Actually Learn — Don’t Coast Till Last Minute!'
     );
 
-    drawAIProtagonist(265, 290, 1.45, t, 1.5, false, speakingRole === 'ai');
-    drawStudent(510, 525, 1.05, '#0284c7', '#090d16', false, t, false, 'ANAY: A+ ✓');
-    drawStudent(650, 525, 1.02, '#10b981', '#1e1b4b', true, t, false, 'MAYA: PASS');
-    drawStudent(780, 525, 1.02, '#3b82f6', '#451a03', false, t, false, 'SAM: PASS');
+    drawAIProtagonist(255, 290, 1.42, t, 1.5, false, speakingRole === 'ai');
+    drawStudent(490, 525, 1.04, '#0284c7', '#090d16', false, t, false, 'ANAY: A+ ✓');
+    drawStudent(630, 525, 1.00, '#10b981', '#1e1b4b', true, t, false, 'FAST 5: A+ ✓');
+    drawStudent(770, 525, 0.98, '#a855f7', '#451a03', false, t, false, '20 AI: PASS');
     drawTheBoy(985, 530, 1.32, 'stand', t, -1, true, speakingRole === 'boy', 'happy');
 
     if (cue) {
-      if (cue.role === 'ai') { speakerX = 265; speakerY = 215; }
+      if (cue.role === 'ai') { speakerX = 255; speakerY = 215; }
       else if (cue.role === 'boy') { speakerX = 985; speakerY = 365; }
     }
   }
