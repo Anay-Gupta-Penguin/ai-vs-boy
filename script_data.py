@@ -67,7 +67,7 @@ SCRIPT_CUES = [
         "role": "anay",
         "gender": "male",
         "bubble": "speech",
-        "text": "Alright guys, we've got fifteen minutes left in the period. Let's actually lock in, open Gemini on our Chromebooks, and build this pitch.",
+        "text": "Alright guys, we've got fifteen minutes left in the period. I already built my financial spreadsheet from scratch—lock in and finish your pitch!",
     },
     {
         "id": 8,
@@ -77,7 +77,7 @@ SCRIPT_CUES = [
         "role": "maya",
         "gender": "female",
         "bubble": "speech",
-        "text": "Oh, that's clean! Gemini just walked us through break-even pricing and customer acquisition cost step by step. Now our slides actually make sense.",
+        "text": "Good call, Anay! Sam, let's open Gemini on our Chromebooks—oh, that's clean! It just walked us through break-even pricing step by step.",
     },
     {
         "id": 9,
@@ -97,7 +97,7 @@ SCRIPT_CUES = [
         "role": "boy",
         "gender": "male",
         "bubble": "speech",
-        "text": "Hold on. You guys hung out half the period, asked Gemini on your Chromebooks, and finished ahead of me? Respectfully, let's put that to the test.",
+        "text": "Hold on. Maya and Sam hung out half the period, asked Gemini on their Chromebooks, and finished ahead of me? Respectfully, let's put that to the test.",
     },
     {
         "id": 11,
@@ -207,7 +207,7 @@ SCRIPT_CUES = [
         "role": "anay",
         "gender": "male",
         "bubble": "speech",
-        "text": "Backup switch flipped, signal at full bars, and Gemini is rebooting cleanly. Everyone's Chromebook work is completely saved!",
+        "text": "Backup switch flipped, signal at full bars, and the classroom network is back online. Everyone's Chromebook work is completely saved!",
     },
     {
         "id": 22,
