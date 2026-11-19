@@ -1,36 +1,61 @@
 MOVIE_ACT1_JS = r"""
-function drawAICopyPasteSquad(centerX, baseY, t, isPanicking, isSpeaking) {
-  // 7 students clustered at desks: 4 in back row, 3 in front row
-  const backRow = [
-    { dx: -150, shirt: '#a855f7', hair: '#1e1b4b', fem: true },
-    { dx: -50,  shirt: '#ec4899', hair: '#451a03', fem: false },
-    { dx: 50,   shirt: '#f97316', hair: '#090d16', fem: true },
-    { dx: 150,  shirt: '#eab308', hair: '#713f12', fem: false },
-  ];
-  const frontRow = [
-    { dx: -105, shirt: '#8b5cf6', hair: '#090d16', fem: false },
-    { dx: 0,    shirt: '#f43f5e', hair: '#4c1d95', fem: true },
-    { dx: 105,  shirt: '#06b6d4', hair: '#1e293b', fem: false },
+function drawFastFiveExceptions(centerX, baseY, t, isSpeaking) {
+  // 5 students who finished fast WITHOUT AI and are now chilling/fooling around
+  const spots = [
+    { dx: -52, dy: -46, shirt: '#10b981', hair: '#1e1b4b', fem: true },
+    { dx:  52, dy: -46, shirt: '#3b82f6', hair: '#451a03', fem: false },
+    { dx: -76, dy:  16, shirt: '#14b8a6', hair: '#090d16', fem: false },
+    { dx:   0, dy:  16, shirt: '#22c55e', hair: '#713f12', fem: true },
+    { dx:  76, dy:  16, shirt: '#0ea5e9', hair: '#1e293b', fem: false },
   ];
 
-  // Back row (4 students)
-  backRow.forEach((s, idx) => {
-    const jitter = isPanicking ? Math.sin(t * 24 + idx) * 3 : 0;
-    drawStudent(centerX + s.dx + jitter, baseY - 48, 0.76, s.shirt, s.hair, s.fem, t + idx, isSpeaking && idx === 1, 'AI TAB');
+  spots.forEach((s, idx) => {
+    const chillBob = Math.sin(t * 4 + idx) * 2.5;
+    drawStudent(centerX + s.dx, baseY + s.dy + chillBob, 0.68, s.shirt, s.hair, s.fem, t + idx, isSpeaking && idx === 0, 'DONE ✓');
   });
 
-  // Front row (3 students)
-  frontRow.forEach((s, idx) => {
-    const jitter = isPanicking ? Math.cos(t * 26 + idx) * 3.5 : 0;
-    drawStudent(centerX + s.dx + jitter, baseY + 12, 0.84, s.shirt, s.hair, s.fem, t + idx + 2, isSpeaking && idx === 1, isPanicking ? 'ALMOST DONE!' : 'CTRL+C/V');
+  drawComicRect(centerX - 115, baseY - 156, 230, 28, 7, '#dcfce7', INK, 2.8);
+  ctx.fillStyle = '#15803d';
+  ctx.font = '900 11px "Comic Sans MS", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('5 EXCEPTIONS: DONE (NO AI) & CHILL', centerX, baseY - 138);
+}
+
+function drawTwentyStudentCrowd(centerX, baseY, t, isFocusedAI, isSpeaking) {
+  // Exact 20 students arranged in 3 rows (7 + 7 + 6 = 20)
+  const palette = ['#a855f7', '#ec4899', '#f97316', '#eab308', '#8b5cf6', '#f43f5e', '#06b6d4', '#6366f1'];
+  const hairs = ['#090d16', '#1e1b4b', '#451a03', '#713f12', '#4c1d95', '#1e293b'];
+  const rows = [
+    { count: 7, dy: -74, scale: 0.56, spread: 74 },
+    { count: 7, dy: -22, scale: 0.62, spread: 78 },
+    { count: 6, dy:  32, scale: 0.68, spread: 84 },
+  ];
+
+  let studentIdx = 0;
+  rows.forEach((row, rIdx) => {
+    const startX = centerX - ((row.count - 1) * row.spread) / 2;
+    for (let c = 0; c < row.count; c++) {
+      const sx = startX + c * row.spread;
+      const shirt = palette[studentIdx % palette.length];
+      const hair = hairs[studentIdx % hairs.length];
+      const fem = studentIdx % 2 === 0;
+
+      // Fooling around = bouncy chatting; Focused-ish AI = calm, steady slight lean
+      const motionY = isFocusedAI ? Math.sin(t * 2 + studentIdx) * 0.8 : Math.sin(t * 6 + studentIdx * 1.3) * 3.5;
+      const badge = isFocusedAI ? (rIdx === 2 ? 'CALM AI ✓' : 'AI COPY') : 'CHILLING';
+      drawStudent(sx, baseY + row.dy + motionY, row.scale, shirt, hair, fem, t + studentIdx, isSpeaking && studentIdx === 16, badge);
+      studentIdx++;
+    }
   });
 
-  // Floating Copy-Paste / Panic Banner above the 7-person AI Squad
-  const bannerW = 330;
-  const bannerBg = isPanicking ? '#fee2e2' : '#e0f2fe';
-  const bannerText = isPanicking ? 'PANIC TAB-SWITCH: "IM ALMOST DONE!!"' : 'AI SQUAD (7): CTRL+C -> CTRL+V';
+  // Banner showing the transition from fooling around -> calm last-minute AI mode
+  const bannerW = 470;
+  const bannerBg = isFocusedAI ? '#e0f2fe' : '#fef08a';
+  const bannerText = isFocusedAI
+    ? '20 STUDENTS: FOCUSED-ISH... CALMLY USING AI AT LAST MINUTE'
+    : '20 STUDENTS: FOOLING AROUND (WAITING TILL LAST MINUTE)';
   drawComicRect(centerX - bannerW / 2, baseY - 178, bannerW, 30, 8, bannerBg, INK, 3);
-  ctx.fillStyle = isPanicking ? '#dc2626' : '#0284c7';
+  ctx.fillStyle = isFocusedAI ? '#0284c7' : '#b45309';
   ctx.font = '900 12px "Comic Sans MS", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(bannerText, centerX, baseY - 158);
@@ -55,73 +80,64 @@ function renderAct1(t, cue, speakingRole) {
     drawAIProtagonist(1070, 355, 1.25, t, 1.25, false, false);
   }
 
-  // 18s - 83s: REALISTIC CLASSROOM — 2 DOING OWN THING (NO AI), ANAY & BOY WORKING, 7 COPY-PASTING AI
+  // 18s - 83s: 5 FAST EXCEPTIONS (NO AI), ANAY & BOY GRINDING, 20 FOOLING AROUND
   else if (t < 83.0) {
     drawClassroomBackdrop(
       'TODAY: MINI STARTUP PITCH',
-      '• Build Pricing & Profit Margin From Scratch',
-      '• Due Before the Bell — No Blind Copy-Pasting!'
+      '• 5 Fast Finishers: Done Without AI | Anay & Boy: Grinding',
+      '• 20 Students: Fooling Around & Waiting Till Last Minute'
     );
 
-    // 1. Couple of random classmates doing their own thing (NOT using AI)
-    drawStudent(110, 535, 0.88, '#10b981', '#1e1b4b', true, t, speakingRole === 'maya', 'MAYA (NO AI)');
-    drawStudent(225, 535, 0.88, '#3b82f6', '#451a03', false, t, speakingRole === 'sam', 'SAM (NO AI)');
-    drawComicRect(82, 368, 170, 26, 6, '#dcfce7', INK, 2.5);
-    ctx.fillStyle = '#15803d'; ctx.font = '900 11px "Comic Sans MS", sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('DOING OWN THING (NO AI)', 167, 385);
+    // Left: 5 fast exceptions who finished without AI and are now fooling around/chilling
+    drawFastFiveExceptions(135, 525, t, speakingRole === 'fast5');
 
-    // 2. The 2 students genuinely doing work: Anay & The Boy
-    drawStudent(380, 535, 0.96, '#0284c7', '#090d16', false, t, speakingRole === 'anay', 'ANAY (REAL WORK)');
+    // Center-left: The 2 steady workers (Anay & The Boy)
+    drawStudent(335, 535, 0.94, '#0284c7', '#090d16', false, t, speakingRole === 'anay', 'ANAY (NO AI)');
     for (let b = 0; b < 3; b++) {
-      drawComicRect(465, 522 - b * 18, 68, 16, 4, '#ffffff', INK, 2.5);
+      drawComicRect(410, 522 - b * 18, 62, 16, 4, '#ffffff', INK, 2.5);
     }
-    drawTheBoy(575, 535, 1.08, 'stand', t, 1, false, speakingRole === 'boy', 'angry');
+    drawTheBoy(512, 535, 1.04, 'stand', t, 1, false, speakingRole === 'boy', 'angry');
 
-    // 3. Small chunk of 7 students blatantly copy-pasting AI
-    const isPanicking = t >= 69.0 || speakingRole === 'aisquad';
-    drawAICopyPasteSquad(1025, 525, t, isPanicking, speakingRole === 'aisquad');
+    // Right: All 20 procrastinating students fooling around before last-minute AI mode
+    drawTwentyStudentCrowd(965, 525, t, false, speakingRole === 'aisquad');
 
-    // 4. Business Teacher wandering around casually ("doing idk") then walking near AI squad
-    const teacherX = t < 66.0
-      ? 680 + Math.sin(t * 0.7) * 90
-      : lerp(720, 815, smoothstep(66.0, 72.0, t));
-    drawWalkingTeacher(teacherX, 530, t, speakingRole === 'teacher', true, t < 66.0 ? (Math.cos(t * 0.7) >= 0 ? 1 : -1) : 1);
+    // Wandering Business Teacher
+    const teacherX = 635 + Math.sin(t * 0.65) * 65;
+    drawWalkingTeacher(teacherX, 530, t, speakingRole === 'teacher', true, Math.cos(t * 0.65) >= 0 ? 1 : -1);
 
     if (cue) {
       if (cue.role === 'teacher') { speakerX = teacherX; speakerY = 390; }
-      else if (cue.role === 'maya' || cue.role === 'sam') { speakerX = 168; speakerY = 395; }
-      else if (cue.role === 'anay') { speakerX = 380; speakerY = 395; }
-      else if (cue.role === 'boy') { speakerX = 575; speakerY = 380; }
-      else if (cue.role === 'aisquad') { speakerX = 1025; speakerY = 340; }
+      else if (cue.role === 'fast5') { speakerX = 135; speakerY = 385; }
+      else if (cue.role === 'anay') { speakerX = 335; speakerY = 395; }
+      else if (cue.role === 'boy') { speakerX = 512; speakerY = 380; }
+      else if (cue.role === 'aisquad') { speakerX = 965; speakerY = 340; }
     }
   }
 
-  // 83s - 125s: TEACHER CONFRONTS THE 7 AI COPY-PASTERS; ANAY & BOY FINISH FROM SCRATCH
+  // 83s - 125s: LAST MINUTE — THE 20 SLIP INTO FOCUSED-ISH CALM AI MODE & FINISH
   else if (t < 125.0) {
     drawClassroomBackdrop(
-      '15 MINUTES LEFT — SHOW YOUR WORK!',
-      '• Anay & The Boy: 100% Built From Scratch ✓',
-      '• AI Squad: Panicking & Switching Tabs'
+      'LAST 10 MINUTES — DEADLINE APPROACHING!',
+      '• Anay & The Boy: Finished From Scratch ✓',
+      '• 20 Students: Slowly Slip Into Calm AI Copy-Paste Mode'
     );
 
-    // Random classmates still chilling without AI
-    drawStudent(110, 535, 0.88, '#10b981', '#1e1b4b', true, t, false, 'MAYA (NO AI)');
-    drawStudent(225, 535, 0.88, '#3b82f6', '#451a03', false, t, false, 'SAM (NO AI)');
+    drawFastFiveExceptions(135, 525, t, false);
 
-    // Anay & The Boy genuinely done
-    drawStudent(380, 535, 0.96, '#0284c7', '#090d16', false, t, speakingRole === 'anay', 'ANAY (DONE ✓)');
-    drawTheBoy(545, 535, 1.08, 'stand', t, 1, false, speakingRole === 'boy', 'normal');
+    drawStudent(335, 535, 0.94, '#0284c7', '#090d16', false, t, speakingRole === 'anay', 'ANAY (DONE ✓)');
+    drawTheBoy(505, 535, 1.04, 'stand', t, 1, false, speakingRole === 'boy', 'normal');
 
-    // Teacher standing right in front of the 7-person AI Squad
-    drawWalkingTeacher(745, 530, t, speakingRole === 'teacher', false, 1);
-    drawAICopyPasteSquad(1025, 525, t, true, speakingRole === 'aisquad');
-    drawAIProtagonist(1025, 225, 0.95, t, 1.1, false, false);
+    drawWalkingTeacher(635, 530, t, speakingRole === 'teacher', false, 1);
+
+    // The 20 students are now in their calm "focused-ish" AI phase
+    drawTwentyStudentCrowd(965, 525, t, true, speakingRole === 'aisquad');
+    drawAIProtagonist(965, 225, 0.92, t, 1.15, false, false);
 
     if (cue) {
-      if (cue.role === 'teacher') { speakerX = 745; speakerY = 390; }
-      else if (cue.role === 'aisquad') { speakerX = 1025; speakerY = 340; }
-      else if (cue.role === 'anay') { speakerX = 380; speakerY = 395; }
-      else if (cue.role === 'boy') { speakerX = 545; speakerY = 380; }
+      if (cue.role === 'teacher') { speakerX = 635; speakerY = 390; }
+      else if (cue.role === 'aisquad') { speakerX = 965; speakerY = 340; }
+      else if (cue.role === 'anay') { speakerX = 335; speakerY = 395; }
+      else if (cue.role === 'boy') { speakerX = 505; speakerY = 380; }
     }
   }
 
