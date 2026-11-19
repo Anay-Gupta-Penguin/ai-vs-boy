@@ -37,14 +37,14 @@ function lockCharacterVoices() {
   const secondaryFemale = females[1] || primaryFemale;
   const foundTrueMale = males.length > 0;
 
-  LOCKED_CAST.boy      = { voice: primaryMale,    pitch: foundTrueMale ? 1.05 : 0.72, rate: 1.04 };
-  LOCKED_CAST.narrator = { voice: secondaryMale,  pitch: foundTrueMale ? 0.90 : 0.66, rate: 0.98 };
+  LOCKED_CAST.boy      = { voice: primaryMale,    pitch: foundTrueMale ? 1.05 : 0.72, rate: 1.05 };
+  LOCKED_CAST.narrator = { voice: secondaryMale,  pitch: foundTrueMale ? 0.90 : 0.66, rate: 1.00 };
   LOCKED_CAST.teacher  = { voice: tertiaryMale,   pitch: foundTrueMale ? 0.85 : 0.64, rate: 1.00 };
-  LOCKED_CAST.sam      = { voice: secondaryMale,  pitch: foundTrueMale ? 1.12 : 0.76, rate: 1.05 };
+  LOCKED_CAST.sam      = { voice: secondaryMale,  pitch: foundTrueMale ? 1.12 : 0.76, rate: 1.06 };
   LOCKED_CAST.mrr      = { voice: secondaryMale,  pitch: foundTrueMale ? 0.94 : 0.68, rate: 1.02 };
-  LOCKED_CAST.anay     = { voice: tertiaryMale,   pitch: foundTrueMale ? 1.02 : 0.74, rate: 1.04 };
-  LOCKED_CAST.ai       = { voice: primaryFemale,  pitch: 1.08, rate: 1.04 };
-  LOCKED_CAST.maya     = { voice: secondaryFemale,pitch: 1.18, rate: 1.06 };
+  LOCKED_CAST.anay     = { voice: tertiaryMale,   pitch: foundTrueMale ? 1.02 : 0.74, rate: 1.05 };
+  LOCKED_CAST.ai       = { voice: primaryFemale,  pitch: 1.08, rate: 1.05 };
+  LOCKED_CAST.maya     = { voice: secondaryFemale,pitch: 1.18, rate: 1.07 };
 
   voicesAreLocked = true;
 }
@@ -83,7 +83,7 @@ function playCueAudio(cue) {
       utter.rate = profile.rate * playbackSpeed;
     } else {
       utter.pitch = cue.gender === 'male' ? 0.75 : 1.14;
-      utter.rate = 1.02 * playbackSpeed;
+      utter.rate = 1.03 * playbackSpeed;
     }
     utter.volume = 1.0;
     utter.onstart = () => { isSpeechSpeaking = true; };
@@ -186,13 +186,13 @@ function startScoreLoop() {
     if (t < 18) {
       const notes = [261.63, 329.63, 392.0, 523.25];
       playTone(notes[stepCount % notes.length], 0.55, 'triangle', 0.020);
-    } else if (t < 56) {
-      const bouncy = [130.81, 196.0, 164.81, 196.0];
-      playTone(bouncy[stepCount % 4], 0.3, 'triangle', 0.016);
-    } else if (t < 102) {
-      const dream = [329.63, 392.0, 493.88, 587.33, 493.88];
-      playTone(dream[stepCount % dream.length], 0.65, 'sine', 0.018);
-    } else if (t < 152) {
+    } else if (t < 80) {
+      const bouncy = [164.81, 196.0, 261.63, 196.0];
+      playTone(bouncy[stepCount % 4], 0.26, 'triangle', 0.017);
+    } else if (t < 115) {
+      const chill = [196.0, 246.94, 293.66, 392.0];
+      playTone(chill[stepCount % 4], 0.38, 'sine', 0.018);
+    } else if (t < 151) {
       const bouncy = [146.83, 220.0, 174.61, 220.0];
       playTone(bouncy[stepCount % 4], 0.28, 'triangle', 0.018);
     } else if (t < 222) {
@@ -215,13 +215,129 @@ function startScoreLoop() {
 }
 
 // ==========================================
+// CUSTOM STORY PROPS & WALKING TEACHER
+// ==========================================
+function drawWalkingTeacher(x, y, time = 0, isSpeaking = false, isWalking = false, facing = -1) {
+  ctx.save();
+  ctx.translate(x, y);
+  const bob = isWalking ? -Math.abs(Math.sin(time * 9)) * 5 : 0;
+  ctx.translate(0, bob);
+  ctx.scale(facing, 1);
+
+  const legSwing = isWalking ? Math.sin(time * 9) * 16 : 0;
+  ctx.lineCap = 'round';
+  [[-9, -10 - legSwing], [9, 10 + legSwing]].forEach(([lx, fx]) => {
+    ctx.strokeStyle = INK; ctx.lineWidth = 17;
+    ctx.beginPath(); ctx.moveTo(lx, -28); ctx.lineTo(fx, 18); ctx.stroke();
+    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.moveTo(lx, -28); ctx.lineTo(fx, 18); ctx.stroke();
+  });
+
+  // Torso & Tie
+  drawComicRect(-24, -88, 48, 62, 14, '#475569', INK, 4);
+  ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(4, -80); ctx.lineTo(-2, -46); ctx.lineTo(4, -38); ctx.lineTo(10, -46); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
+  // Head
+  ctx.fillStyle = '#fed7aa'; ctx.strokeStyle = INK; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(0, -110, 23, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  drawCartoonEye(4, -112, 5, 2, 0, isSpeaking ? 'angry' : 'normal', false);
+  drawCartoonEye(16, -112, 5, 2, 0, isSpeaking ? 'angry' : 'normal', false);
+
+  if (isSpeaking) {
+    ctx.fillStyle = '#7f1d1d';
+    ctx.beginPath(); ctx.ellipse(10, -96, 6, 3 + Math.abs(Math.sin(time * 18)) * 4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  } else {
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(4, -96); ctx.lineTo(15, -96); ctx.stroke();
+  }
+
+  // Arm holding Clipboard
+  const armY = isSpeaking ? -66 + Math.sin(time * 14) * 6 : -56;
+  ctx.strokeStyle = INK; ctx.lineWidth = 14;
+  ctx.beginPath(); ctx.moveTo(14, -74); ctx.lineTo(36, armY); ctx.stroke();
+  ctx.strokeStyle = '#475569'; ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.moveTo(14, -74); ctx.lineTo(36, armY); ctx.stroke();
+  drawComicRect(28, armY - 16, 18, 26, 4, '#d97706', INK, 3);
+
+  ctx.restore();
+  // Label
+  drawComicRect(x - 68, y + 26, 136, 22, 6, '#fef08a', INK, 2.5);
+  ctx.fillStyle = '#090d16';
+  ctx.font = '900 11px "Comic Sans MS", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('BUSINESS TEACHER', x, y + 41);
+}
+
+function drawPaperAirplane(x, y, angle, scale = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(26, 0);
+  ctx.lineTo(-22, -14);
+  ctx.lineTo(-12, 0);
+  ctx.lineTo(-22, 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(26, 0);
+  ctx.lineTo(-12, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawChromebookZoom(x, y, mode, time) {
+  ctx.save();
+  ctx.translate(x, y);
+  drawComicRect(-115, -80, 230, 145, 10, '#334155', INK, 4);
+  drawComicRect(-103, -68, 206, 120, 6, mode === 'game' ? '#0f172a' : '#1e1b4b', INK, 3);
+  drawComicRect(-130, 65, 260, 16, 6, '#94a3b8', INK, 3.5);
+
+  if (mode === 'game') {
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(-95, 28, 190, 4);
+    const jumpY = -Math.abs(Math.sin(time * 9)) * 34;
+    drawComicRect(-68, 6 + jumpY, 18, 22, 3, '#4ade80', INK, 2);
+    const obsX = 75 - ((time * 140) % 155);
+    drawComicRect(obsX, 10, 14, 18, 2, '#ef4444', INK, 2);
+    ctx.fillStyle = '#fde047';
+    ctx.font = '900 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('CB DINO GAME // HI: 9999', 0, -48);
+  } else {
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '900 13px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('GEMINI AI ON CHROMEBOOK', 0, -48);
+    [0, 1, 2, 3].forEach(i => {
+      const h = 18 + i * 11;
+      drawComicRect(-66 + i * 36, 36 - h, 24, h, 3, '#4ade80', INK, 2);
+    });
+    drawComicRect(-75, -34, 150, 22, 5, '#fef08a', INK, 2);
+    ctx.fillStyle = '#090d16';
+    ctx.font = '900 11px "Comic Sans MS", sans-serif';
+    ctx.fillText('SUBMITTED! 100% A+', 0, -19);
+  }
+  ctx.restore();
+}
+
+// ==========================================
 // SMOOTH MOVIE CAMERA & VISUAL TRANSITIONS
 // ==========================================
 const CUT_POINTS = [
   { t: 18.0, kind: 'iris' },
-  { t: 56.0, kind: 'dream' },
-  { t: 102.0, kind: 'wipe' },
-  { t: 152.0, kind: 'vortex' },
+  { t: 80.0, kind: 'dream' },
+  { t: 93.5, kind: 'smooth' },
+  { t: 115.5, kind: 'wipe' },
+  { t: 151.0, kind: 'vortex' },
   { t: 222.0, kind: 'fade' },
   { t: 268.0, kind: 'fade' },
   { t: 322.0, kind: 'iris' },
@@ -232,8 +348,8 @@ function drawSmoothTransitions(t) {
   for (let i = 0; i < CUT_POINTS.length; i++) {
     const b = CUT_POINTS[i];
     const dist = Math.abs(t - b.t);
-    if (dist < 1.05) {
-      const intensity = 1 - smoothstep(0.0, 1.05, dist);
+    if (dist < 1.0) {
+      const intensity = 1 - smoothstep(0.0, 1.0, dist);
       if (b.kind === 'iris') {
         const holeR = Math.max(0, 820 * (1 - intensity));
         ctx.save();
@@ -243,8 +359,8 @@ function drawSmoothTransitions(t) {
         ctx.arc(W / 2, H / 2, holeR, 0, Math.PI * 2, true);
         ctx.fill();
         ctx.restore();
-      } else if (b.kind === 'dream') {
-        ctx.fillStyle = `rgba(224, 242, 254, ${intensity * 0.85})`;
+      } else if (b.kind === 'dream' || b.kind === 'smooth') {
+        ctx.fillStyle = `rgba(224, 242, 254, ${intensity * 0.78})`;
         ctx.fillRect(0, 0, W, H);
       } else if (b.kind === 'vortex') {
         ctx.save();
@@ -286,7 +402,7 @@ for (let i = 0; i < 90; i++) {
 }
 
 // ==========================================
-// 390-SECOND (6:30) DOG MAN COMIC MOVIE
+// 390-SECOND (6:30) STORY-DRIVEN COMIC MOVIE
 // ==========================================
 function renderScene(t) {
   ctx.clearRect(0, 0, W, H);
@@ -346,247 +462,250 @@ function renderScene(t) {
     ctx.fillText("THE SCHOLAR'S REBELLION", 0, 0);
     ctx.restore();
 
-    drawComicRect(W / 2 - 330, 365, 660, 44, 12, '#ffffff', INK, 4);
+    drawComicRect(W / 2 - 335, 365, 670, 44, 12, '#ffffff', INK, 4);
     ctx.fillStyle = '#090d16';
     ctx.font = '900 18px "Comic Sans MS", sans-serif';
-    ctx.fillText('Intro to Business & Finance. One Google Scholar Kid. One Star-Orb A.I.', W / 2, 393);
-
-    speakerX = W / 2;
-    speakerY = 140;
+    ctx.fillText('Fooling Around in Class. Arguing With the Teacher. Finishing With Gemini.', W / 2, 393);
   }
 
-  // 18s - 56s: INTRO TO BUSINESS & FINANCE CLASSROOM
-  else if (t < 56.0) {
+  // 18s - 80s: FOOLING AROUND, TEACHER WALKING AROUND & STUDENTS ARGUING BACK!
+  else if (t < 80.0) {
     const local = t - 18.0;
-    const camZoom = lerp(1.0, 1.04, local / 38.0);
-    ctx.save();
-    ctx.translate(W / 2, H / 2);
-    ctx.scale(camZoom, camZoom);
-    ctx.translate(-W / 2, -H / 2);
 
     drawHalftonePaper('#e0f2fe', 'rgba(2, 132, 199, 0.12)');
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillRect(0, 535, W, 185);
+    ctx.fillRect(0, 545, W, 175);
     ctx.strokeStyle = INK;
     ctx.lineWidth = 4.5;
-    ctx.beginPath(); ctx.moveTo(0, 535); ctx.lineTo(W, 535); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 545); ctx.lineTo(W, 545); ctx.stroke();
 
-    // Hand-drawn Green Chalkboard
-    drawComicRect(95, 130, 650, 255, 14, '#15803d', '#92400e', 10);
-    ctx.fillStyle = '#fef08a';
-    ctx.font = '900 22px "Comic Sans MS", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('INTRO TO BUSINESS & FINANCE — DUE FRIDAY!', 125, 180);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px "Comic Sans MS", sans-serif';
-    ctx.fillText('• Supply & Demand Equilibrium Curve', 125, 224);
-    ctx.fillText('• Compound Interest: A = P(1 + r/n)^nt', 125, 260);
-    ctx.fillText('• Startup Cash Flow & Break-Even ROI', 125, 296);
-
-    drawTeacher(1090, 520, t, speakingRole === 'teacher');
-    drawStudent(555, 515, 1.15, '#ec4899', '#4c1d95', true, t, speakingRole === 'maya', 'MAYA');
-    drawStudent(755, 515, 1.15, '#0ea5e9', '#1e1b4b', false, t, speakingRole === 'sam', 'SAM');
-
-    if (local > 12) {
-      drawAIProtagonist(655, 385, 0.56, t, 0.9, false, false);
-      drawComicRect(575, 315, 160, 26, 8, '#fef08a', INK, 2.5);
-      ctx.fillStyle = '#090d16';
-      ctx.font = '900 11px "Comic Sans MS", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('ROI & BREAK-EVEN!', 655, 332);
-    }
-
-    const boyMood = local > 22 ? 'angry' : 'normal';
-    drawTheBoy(225, 520, 1.28, 'stand', t, 1, false, false, boyMood);
-
-    ctx.restore();
-
-    if (cue) {
-      if (cue.role === 'teacher') { speakerX = 1090; speakerY = 380; }
-      else if (cue.role === 'maya') { speakerX = 555; speakerY = 390; }
-      else if (cue.role === 'sam') { speakerX = 755; speakerY = 390; }
-    }
-  }
-
-  // 56s - 102s: ANIMATED THOUGHT PROCESSES (MIND BUBBLES)
-  else if (t < 102.0) {
-    const local = t - 56.0;
-    drawHalftonePaper('#ede9fe', 'rgba(124, 58, 237, 0.14)');
-
-    if (local < 14.5) {
-      drawStudent(275, 580, 1.25, '#ec4899', '#4c1d95', true, t, false, 'MAYA');
-      drawStudent(465, 580, 1.25, '#0ea5e9', '#1e1b4b', false, t, false, 'SAM');
-
-      drawThoughtCloud(800, 325, 580, 270, 440, 450, '#38bdf8', t);
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#0284c7';
-      ctx.font = '900 21px "Comic Sans MS", sans-serif';
-      ctx.fillText("INSIDE MAYA & SAM'S BRAIN:", 800, 245);
-
-      ctx.fillStyle = '#090d16';
-      ctx.font = 'bold 17px "Comic Sans MS", sans-serif';
-      ctx.fillText('1. Ask Gemini to explain Compound Interest', 800, 286);
-      ctx.fillText('2. Test supply & demand pricing ideas', 800, 320);
-      ctx.fillText('3. Check the math & build our own pitch!', 800, 354);
-
-      [0, 1, 2, 3].forEach(b => {
-        const bh = 25 + b * 14 + Math.sin(t * 5 + b) * 5;
-        drawComicRect(705 + b * 50, 425 - bh, 32, bh, 4, '#22c55e', INK, 3);
-      });
-    } else {
-      drawTheBoy(260, 575, 1.44, 'stand', t, 1, false, speakingRole === 'boy', 'angry');
-      drawThoughtCloud(810, 330, 620, 285, 315, 420, '#ef4444', t);
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#dc2626';
-      ctx.font = '900 21px "Comic Sans MS", sans-serif';
-      ctx.fillText("INSIDE THE BOY'S BRAIN:", 810, 245);
-
-      ctx.fillStyle = '#090d16';
-      ctx.font = 'bold 17px "Comic Sans MS", sans-serif';
-      ctx.fillText('"If everyone uses A.I. for Business & Finance..."', 810, 288);
-      ctx.fillText('"Nobody will read journals on Google Scholar!"', 810, 322);
-      ctx.fillText('"I MUST SAVE PRIMARY SOURCES!"', 810, 360);
-
-      drawComicRect(715, 380, 190, 48, 8, '#38bdf8', INK, 3.5);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 16px monospace';
-      ctx.fillText('scholar.google.com', 810, 410);
-
-      speakerX = 270;
-      speakerY = 395;
-    }
-  }
-
-  // 102s - 152s: CLASSROOM SHOWDOWN
-  else if (t < 152.0) {
-    const local = t - 102.0;
-    drawHalftonePaper('#fef3c7', 'rgba(217, 119, 6, 0.14)');
-    ctx.fillStyle = '#cbd5e1';
-    ctx.fillRect(0, 535, W, 185);
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 4.5;
-    ctx.beginPath(); ctx.moveTo(0, 535); ctx.lineTo(W, 535); ctx.stroke();
-
-    drawComicRect(100, 130, 540, 210, 14, '#15803d', '#92400e', 9);
+    // Chalkboard
+    drawComicRect(75, 145, 510, 210, 14, '#15803d', '#92400e', 9);
     ctx.fillStyle = '#fef08a';
     ctx.font = '900 20px "Comic Sans MS", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('INTRO TO BUSINESS & FINANCE', 130, 180);
+    ctx.fillText('INTRO TO BUSINESS & FINANCE', 105, 190);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 17px "Comic Sans MS", sans-serif';
-    ctx.fillText('-> Supply, Demand & ROI Project', 130, 222);
-    ctx.fillText('-> Due Friday!', 130, 258);
+    ctx.fillText('• Supply, Demand & Compound Interest', 105, 230);
+    ctx.fillText('• Startup Cash-Flow Model (Due Today!)', 105, 266);
 
-    drawTeacher(1100, 520, t, speakingRole === 'teacher');
+    // Paper Airplanes flying while class fools around!
+    if (local > 11) {
+      const planeX = 460 + ((local * 195) % 440);
+      const planeY = 285 + Math.sin(local * 5) * 26;
+      drawPaperAirplane(planeX, planeY, Math.cos(local * 5) * 0.25, 1.15);
+    }
 
-    if (local >= 24.0) {
-      const aiEnter = local - 24.0;
-      const aiY = lerp(110, 275, aiEnter / 3.0);
-      const aiPower = lerp(0.95, 1.75, aiEnter / 26.0);
-      drawAIProtagonist(W / 2 + 50, aiY, 1.48, t, aiPower, false, speakingRole === 'ai');
+    // Maya & Sam talking, playing Chromebook games, and arguing with the teacher!
+    drawStudent(520, 525, 1.15, '#ec4899', '#4c1d95', true, t, speakingRole === 'maya', 'MAYA');
+    drawStudent(730, 525, 1.15, '#0ea5e9', '#1e1b4b', false, t, speakingRole === 'sam', 'SAM');
 
-      [450, 640, 830].forEach((dx, i) => {
-        ctx.strokeStyle = i % 2 === 0 ? '#38bdf8' : '#e879f9';
-        ctx.lineWidth = 6 + Math.sin(t * 14 + i) * 2;
-        ctx.beginPath();
-        ctx.moveTo(W / 2 + 50, aiY + 28);
-        ctx.lineTo(dx, 485);
-        ctx.stroke();
+    // Chromebook zoom showing they are still playing Dino Game openly!
+    if (local > 11) {
+      drawChromebookZoom(730, 245, 'game', t);
+    }
 
-        drawComicRect(dx - 40, 485, 80, 50, 8, '#0f172a', '#38bdf8', 3.5);
-        ctx.fillStyle = '#4ade80';
-        ctx.font = '900 13px "Comic Sans MS", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('A+ ROI!', dx, 515);
-      });
+    // Teacher walking around the classroom aisles!
+    let teacherX = 1090;
+    let isTeacherWalking = false;
+    let teacherFacing = -1;
+    if (local >= 18.0 && local < 24.0) {
+      teacherX = lerp(1090, 910, (local - 18.0) / 6.0);
+      isTeacherWalking = true;
+      teacherFacing = -1;
+    } else if (local >= 24.0 && local < 46.5) {
+      teacherX = 910;
+      isTeacherWalking = false;
+      teacherFacing = -1;
+    } else if (local >= 46.5) {
+      teacherX = lerp(910, 1110, clamp((local - 46.5) / 6.0, 0, 1));
+      isTeacherWalking = local < 52.5;
+      teacherFacing = isTeacherWalking ? 1 : -1;
+    }
+    drawWalkingTeacher(teacherX, 530, t, speakingRole === 'teacher', isTeacherWalking, teacherFacing);
 
-      drawTheBoy(205, 520, 1.32, 'shield', t, 1, false, speakingRole === 'boy', 'angry');
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 8;
-      ctx.beginPath();
-      ctx.moveTo(W / 2 + 50, aiY + 20);
-      ctx.lineTo(275, 430);
-      ctx.stroke();
-      drawCartoonBurst(295, 405, 'KRAK-THOOM!', '#38bdf8', INK, 0.85, 0.12);
+    // Comic argument burst when Sam argues back at the teacher!
+    if (local >= 34.5 && local <= 46.0) {
+      drawCartoonBurst(820, 360, 'ARGUING!', '#fbbf24', INK, 0.85, 0.08);
+    }
 
-      if (cue && cue.role === 'ai') { speakerX = W / 2 + 50; speakerY = aiY - 45; }
-      if (cue && cue.role === 'boy') { speakerX = 205; speakerY = 365; }
-    } else {
-      drawStudent(620, 515, 1.12, '#ec4899', '#4c1d95', true, t, false, 'MAYA');
-      drawStudent(800, 515, 1.12, '#0ea5e9', '#1e1b4b', false, t, false, 'SAM');
+    // The Boy buried in giant stacks of books on the left!
+    for (let b = 0; b < 5; b++) {
+      drawComicRect(95, 515 - b * 24, 92, 22, 4, b % 2 === 0 ? '#3b82f6' : '#ef4444', INK, 3);
+    }
+    drawTheBoy(265, 530, 1.28, 'stand', t, 1, false, speakingRole === 'boy', local > 45 ? 'angry' : 'normal');
 
-      const boyX = 330 + Math.sin(local * 1.3) * 90;
-      const facing = Math.cos(local * 1.3) >= 0 ? 1 : -1;
-      drawTheBoy(boyX, 520, 1.32, 'run', t, facing, false, speakingRole === 'boy', 'angry');
-
-      if (cue && cue.role === 'boy') { speakerX = boyX; speakerY = 365; }
-      if (cue && cue.role === 'teacher') { speakerX = 1100; speakerY = 380; }
+    if (cue) {
+      if (cue.role === 'teacher') { speakerX = teacherX; speakerY = 390; }
+      else if (cue.role === 'maya') { speakerX = 520; speakerY = 395; }
+      else if (cue.role === 'sam') { speakerX = 730; speakerY = 395; }
+      else if (cue.role === 'boy') { speakerX = 265; speakerY = 365; }
     }
   }
 
-  // 152s - 222s: DOG MAN STYLE "FLIP-O-RAMA!" MULTIVERSE BATTLE
-  else if (t < 222.0) {
-    const local = t - 152.0;
-    const dimIdx = Math.min(4, Math.floor(local / 14.0));
-    const bgColors = ['#fef08a', '#ccfbf1', '#fae8ff', '#dbeafe', '#fee2e2'];
-    const ringColors = ['#fbbf24', '#2dd4bf', '#e879f9', '#38bdf8', '#f43f5e'];
-    const burstWords = ['PEER REVIEW!', 'COMPOUND ZAP!', 'APA 7TH!', 'MARKET BEAM!', 'CLASH!'];
+  // 80s - 115.5s: THE BOY'S KNIGHT FANTASY -> SMOOTH, CALM TRANSITION TO USING GEMINI!
+  else if (t < 115.5) {
+    const local = t - 80.0;
 
-    // Rapid 2-frame Flip-O-Rama alternation!
+    // Part A (80s - 93.5s): The Boy's medieval knight thought bubble
+    if (local < 13.5) {
+      drawHalftonePaper('#ede9fe', 'rgba(124, 58, 237, 0.14)');
+      drawTheBoy(250, 575, 1.42, 'stand', t, 1, false, speakingRole === 'boy', 'angry');
+      drawThoughtCloud(805, 330, 620, 290, 315, 420, '#ef4444', t);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#dc2626';
+      ctx.font = '900 22px "Comic Sans MS", sans-serif';
+      ctx.fillText('SIR CITATION VS. CHROMEBOOK GAMERS!', 805, 245);
+
+      ctx.fillStyle = '#090d16';
+      ctx.font = 'bold 17px "Comic Sans MS", sans-serif';
+      ctx.fillText('"They argue with the teacher and play games..."', 805, 288);
+      ctx.fillText('"While I read 14 peer-reviewed PDFs!"', 805, 322);
+      ctx.fillText('"GOOGLE SCHOLAR MUST PREVAIL!"', 805, 360);
+
+      drawComicRect(710, 380, 190, 48, 8, '#38bdf8', INK, 3.5);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 16px monospace';
+      ctx.fillText('scholar.google.com', 805, 410);
+
+      speakerX = 260;
+      speakerY = 395;
+    }
+    // Part B (93.5s - 115.5s): Smooth, chill transition—everyone sits down & works using Gemini!
+    else {
+      drawHalftonePaper('#dcfce7', 'rgba(22, 163, 74, 0.12)');
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, 545, W, 175);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 4.5;
+      ctx.beginPath(); ctx.moveTo(0, 545); ctx.lineTo(W, 545); ctx.stroke();
+
+      // Calm, smooth transition banner
+      drawComicRect(95, 145, 340, 44, 10, '#fef08a', INK, 3.5);
+      ctx.fillStyle = '#090d16';
+      ctx.font = '900 16px "Comic Sans MS", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('LATER IN CLASS — SMOOTH WORK MODE', 265, 173);
+
+      // Maya & Sam casually sitting down and working smoothly with Gemini on Chromebooks!
+      drawStudent(510, 525, 1.18, '#ec4899', '#4c1d95', true, t, speakingRole === 'maya', 'MAYA');
+      drawStudent(730, 525, 1.18, '#0ea5e9', '#1e1b4b', false, t, speakingRole === 'sam', 'SAM');
+
+      drawAIProtagonist(620, 375, 0.72, t, 1.2, false, false);
+      drawChromebookZoom(1030, 345, 'gemini', t);
+
+      if (cue && cue.role === 'maya') { speakerX = 510; speakerY = 390; }
+      if (cue && cue.role === 'sam') { speakerX = 730; speakerY = 390; }
+    }
+  }
+
+  // 115.5s - 151s: THE BOY SNAPS IN CLASS!
+  else if (t < 151.0) {
+    const local = t - 115.5;
+    drawHalftonePaper('#fef3c7', 'rgba(217, 119, 6, 0.14)');
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(0, 545, W, 175);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 4.5;
+    ctx.beginPath(); ctx.moveTo(0, 545); ctx.lineTo(W, 545); ctx.stroke();
+
+    drawWalkingTeacher(1100, 530, t, speakingRole === 'teacher', false, -1);
+
+    if (local >= 22.5) {
+      const aiEnter = local - 22.5;
+      const aiY = lerp(120, 285, aiEnter / 2.5);
+      drawAIProtagonist(W / 2 + 50, aiY, 1.52, t, 1.65, false, speakingRole === 'ai');
+
+      [450, 640, 830].forEach((dx, i) => {
+        ctx.strokeStyle = i % 2 === 0 ? '#38bdf8' : '#22c55e';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(W / 2 + 50, aiY + 28);
+        ctx.lineTo(dx, 495);
+        ctx.stroke();
+
+        drawComicRect(dx - 45, 495, 90, 48, 8, '#0f172a', '#4ade80', 3.5);
+        ctx.fillStyle = '#4ade80';
+        ctx.font = '900 13px "Comic Sans MS", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('100% DONE!', dx, 524);
+      });
+
+      drawTheBoy(205, 530, 1.35, 'shield', t, 1, false, speakingRole === 'boy', 'angry');
+      if (cue && cue.role === 'ai') { speakerX = W / 2 + 50; speakerY = aiY - 45; }
+    } else {
+      drawStudent(620, 525, 1.12, '#ec4899', '#4c1d95', true, t, false, 'SUBMITTED!');
+      drawStudent(800, 525, 1.12, '#0ea5e9', '#1e1b4b', false, t, false, 'DONE!');
+
+      const boyX = 330 + Math.sin(local * 1.5) * 85;
+      const facing = Math.cos(local * 1.5) >= 0 ? 1 : -1;
+      drawTheBoy(boyX, 530, 1.35, 'run', t, facing, false, speakingRole === 'boy', 'angry');
+      if (local < 12) drawCartoonBurst(boyX, 340, 'NO FAIR!!', '#ef4444', '#ffffff', 0.9, -0.1);
+
+      if (cue && cue.role === 'boy') { speakerX = boyX; speakerY = 365; }
+      if (cue && cue.role === 'teacher') { speakerX = 1100; speakerY = 390; }
+    }
+  }
+
+  // 151s - 222s: DOG MAN "FLIP-O-RAMA!" HIGH-SPEED SCHOOL & CHROMEBOOK CHASE!
+  else if (t < 222.0) {
+    const local = t - 151.0;
+    const stageIdx = Math.min(3, Math.floor(local / 17.75));
     const flipFrame = Math.floor(t * 7) % 2;
-    const shakeX = flipFrame === 0 ? -7 : 7;
+    const shakeX = flipFrame === 0 ? -6 : 6;
     const shakeY = flipFrame === 0 ? -4 : 4;
 
     ctx.save();
     ctx.translate(shakeX, shakeY);
-    drawHalftonePaper(bgColors[dimIdx], 'rgba(9, 13, 22, 0.10)');
 
-    // Comic action speed-lines radiating from center
-    ctx.save();
-    ctx.translate(W / 2, H / 2);
-    for (let s = 0; s < 24; s++) {
-      ctx.rotate(Math.PI / 12);
-      ctx.strokeStyle = ringColors[dimIdx];
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(220, 0);
-      ctx.lineTo(750, 0);
-      ctx.stroke();
+    if (stageIdx === 0) {
+      drawHalftonePaper('#fef08a', 'rgba(217, 119, 6, 0.14)');
+      for (let l = 0; l < 6; l++) {
+        drawComicRect(90 + l * 195, 165, 150, 360, 8, '#38bdf8', INK, 4);
+      }
+      drawCartoonBurst(W / 2, 340, 'BOOK BARRAGE!', '#ef4444', '#ffffff', flipFrame === 0 ? 1.1 : 0.9, -0.1);
+    } else if (stageIdx === 1) {
+      drawHalftonePaper('#ccfbf1', 'rgba(13, 148, 136, 0.14)');
+      ctx.strokeStyle = INK; ctx.lineWidth = 18;
+      ctx.beginPath(); ctx.moveTo(0, 560); ctx.bezierCurveTo(420, 220, 820, 620, 1280, 240); ctx.stroke();
+      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.moveTo(0, 560); ctx.bezierCurveTo(420, 220, 820, 620, 1280, 240); ctx.stroke();
+      drawCartoonBurst(W / 2, 260, 'MARKET COASTER!', '#fbbf24', INK, flipFrame === 0 ? 1.1 : 0.9, 0.1);
+    } else if (stageIdx === 2) {
+      drawHalftonePaper('#dbeafe', 'rgba(37, 99, 235, 0.14)');
+      for (let k = 0; k < 8; k++) {
+        const bounceK = (k + flipFrame) % 2 === 0 ? -16 : 0;
+        drawComicRect(85 + k * 142, 470 + bounceK, 124, 75, 10, '#334155', INK, 4);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 18px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(['CTRL', 'ALT', 'TAB', 'ESC', 'A+', 'ROI', 'AI', 'ENTER'][k], 147 + k * 142, 514 + bounceK);
+      }
+      drawCartoonBurst(W / 2, 265, 'KEYBOARD SURF!', '#38bdf8', INK, flipFrame === 0 ? 1.1 : 0.9, -0.08);
+    } else {
+      drawHalftonePaper('#fae8ff', 'rgba(168, 85, 247, 0.14)');
+      for (let p = 0; p < 5; p++) {
+        drawPaperAirplane(360 + p * 140, 260 + ((p + flipFrame) % 2) * 85, -0.1, 1.3);
+      }
+      drawCartoonBurst(W / 2, 340, 'APA 7TH ZAP!', '#e879f9', INK, flipFrame === 0 ? 1.15 : 0.92, 0.1);
     }
+
+    const boyY = (flipFrame === 0 ? 375 : 410) + Math.sin(t * 4) * 24;
+    const aiY = (flipFrame === 0 ? 355 : 315) + Math.cos(t * 4) * 24;
+
+    drawTheBoy(265, boyY + 55, 1.38, flipFrame === 0 ? 'attack' : 'run', t, 1, false, speakingRole === 'boy', 'angry');
+    drawAIProtagonist(1015, aiY, 1.52, t, 1.5, false, speakingRole === 'ai');
+
     ctx.restore();
-
-    const boyY = (flipFrame === 0 ? 355 : 395) + Math.sin(t * 4) * 30;
-    const aiY = (flipFrame === 0 ? 345 : 305) + Math.cos(t * 4) * 30;
-
-    drawTheBoy(270, boyY + 60, 1.38, flipFrame === 0 ? 'attack' : 'run', t, 1, false, speakingRole === 'boy', 'angry');
-    drawAIProtagonist(1010, aiY, 1.52, t, 1.5, false, speakingRole === 'ai');
-
-    const clashX = W / 2 + (flipFrame === 0 ? -45 : 45);
-    const clashY = (boyY + aiY) / 2 + 20;
-
-    ctx.strokeStyle = INK; ctx.lineWidth = 22;
-    ctx.beginPath(); ctx.moveTo(340, boyY - 35); ctx.lineTo(clashX, clashY); ctx.stroke();
-    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 14;
-    ctx.beginPath(); ctx.moveTo(340, boyY - 35); ctx.lineTo(clashX, clashY); ctx.stroke();
-
-    ctx.strokeStyle = INK; ctx.lineWidth = 22;
-    ctx.beginPath(); ctx.moveTo(950, aiY); ctx.lineTo(clashX, clashY); ctx.stroke();
-    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 14;
-    ctx.beginPath(); ctx.moveTo(950, aiY); ctx.lineTo(clashX, clashY); ctx.stroke();
-
-    drawCartoonBurst(clashX, clashY, burstWords[dimIdx], ringColors[dimIdx], INK, flipFrame === 0 ? 1.12 : 0.92, flipFrame === 0 ? -0.12 : 0.12);
-    ctx.restore();
-
     drawFlipORamaBanner(t);
 
-    if (cue && cue.role === 'boy') { speakerX = 270; speakerY = boyY - 85; }
-    if (cue && cue.role === 'ai') { speakerX = 1010; speakerY = aiY - 60; }
+    if (cue && cue.role === 'boy') { speakerX = 265; speakerY = boyY - 85; }
+    if (cue && cue.role === 'ai') { speakerX = 1015; speakerY = aiY - 60; }
   }
 
-  // 222s - 268s: SERVER ROOM & SNEAKY UNPLUGGING
+  // 222s - 268s: CARDBOARD-BOX SERVER ROOM HEIST & UNPLUGGING!
   else if (t < 268.0) {
     const local = t - 222.0;
     const unplugged = local >= 32.5;
@@ -598,68 +717,68 @@ function renderScene(t) {
 
     drawHalftonePaper(unplugged ? '#1e293b' : '#e2e8f0', 'rgba(9, 13, 22, 0.12)');
     ctx.fillStyle = unplugged ? '#0f172a' : '#94a3b8';
-    ctx.fillRect(0, 535, W, 185);
+    ctx.fillRect(0, 545, W, 175);
     ctx.strokeStyle = INK;
     ctx.lineWidth = 4.5;
-    ctx.beginPath(); ctx.moveTo(0, 535); ctx.lineTo(W, 535); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 545); ctx.lineTo(W, 545); ctx.stroke();
 
-    // Mainframe Server Rack
-    drawComicRect(885, 190, 195, 345, 14, '#334155', INK, 4.5);
+    drawComicRect(885, 195, 195, 350, 14, '#334155', INK, 4.5);
     for (let row = 0; row < 5; row++) {
-      drawComicRect(905, 215 + row * 60, 155, 44, 8, '#0f172a', INK, 3);
+      drawComicRect(905, 220 + row * 60, 155, 44, 8, '#0f172a', INK, 3);
       ctx.fillStyle = unplugged ? '#ef4444' : '#22c55e';
       ctx.beginPath();
-      ctx.arc(926, 237 + row * 60, 7, 0, Math.PI * 2);
+      ctx.arc(926, 242 + row * 60, 7, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Wall Outlet & Orange Power Cord
-    drawComicRect(735, 430, 52, 62, 8, '#ffffff', INK, 4);
+    drawComicRect(735, 435, 52, 62, 8, '#ffffff', INK, 4);
     ctx.strokeStyle = INK;
     ctx.lineWidth = 15;
     ctx.beginPath();
-    ctx.moveTo(885, 470);
+    ctx.moveTo(885, 475);
     if (!unplugged) {
-      ctx.lineTo(787, 462);
+      ctx.lineTo(787, 467);
       ctx.stroke();
       ctx.strokeStyle = '#f97316';
       ctx.lineWidth = 8.5;
       ctx.stroke();
     } else {
-      ctx.quadraticCurveTo(810, 530, 695, 487);
+      ctx.quadraticCurveTo(810, 535, 695, 492);
       ctx.stroke();
       ctx.strokeStyle = '#f97316';
       ctx.lineWidth = 8.5;
       ctx.stroke();
-      drawComicRect(670, 473, 28, 28, 5, '#ef4444', INK, 3.5);
+      drawComicRect(670, 478, 28, 28, 5, '#ef4444', INK, 3.5);
       ctx.fillStyle = '#e2e8f0';
-      ctx.fillRect(656, 478, 14, 5);
-      ctx.fillRect(656, 492, 14, 5);
+      ctx.fillRect(656, 483, 14, 5);
+      ctx.fillRect(656, 497, 14, 5);
     }
 
     const boyX = unplugged ? 625 : (local < 13.5 ? 210 : lerp(210, 675, (local - 13.5) / 19.0));
     const boyPose = unplugged ? 'stand' : (local < 13.5 ? 'stand' : 'tiptoe');
-    drawTheBoy(boyX, 520, 1.32, boyPose, t, 1, false, speakingRole === 'boy', unplugged ? 'happy' : 'normal');
+    drawTheBoy(boyX, 530, 1.32, boyPose, t, 1, false, speakingRole === 'boy', unplugged ? 'happy' : 'normal');
 
     if (local >= 13.5 && !unplugged) {
+      drawComicRect(boyX - 46, 395, 92, 105, 6, '#d97706', INK, 4);
       ctx.fillStyle = '#090d16';
-      ctx.font = '900 18px "Comic Sans MS", sans-serif';
+      ctx.font = '900 12px "Comic Sans MS", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('TIP-TOE... TIP-TOE...', boyX, 575);
+      ctx.fillText('TOTALLY NOT', boyX, 442);
+      ctx.fillText('A STUDENT', boyX, 460);
     }
 
-    drawAIProtagonist(410, unplugged ? 510 : 300, 1.38, t, 1.15, unplugged, speakingRole === 'ai' && !unplugged);
+    drawAIProtagonist(410, unplugged ? 520 : 300, 1.38, t, 1.15, unplugged, speakingRole === 'ai' && !unplugged);
 
     if (unplugged) {
       if (local < 36.0) {
-        drawCartoonBurst(710, 390, 'YOINK!!', '#ef4444', '#ffffff', 1.18, -0.12);
+        drawCartoonBurst(710, 395, 'YOINK!!', '#ef4444', '#ffffff', 1.18, -0.12);
       }
       ctx.fillStyle = 'rgba(239, 68, 68, 0.16)';
       ctx.fillRect(0, 0, W, H);
     }
 
     if (cue && cue.role === 'boy') { speakerX = boyX; speakerY = 360; }
-    if (cue && cue.role === 'ai') { speakerX = 410; speakerY = unplugged ? 440 : 230; }
+    if (cue && cue.role === 'ai') { speakerX = 410; speakerY = unplugged ? 445 : 230; }
   }
 
   // 268s - 322s: MR. R (LORD & SAVIOR) & ANAY GUPTA RESCUE AI
@@ -674,43 +793,43 @@ function renderScene(t) {
 
     drawHalftonePaper(revived ? '#fef9c3' : '#cbd5e1', 'rgba(234, 179, 8, 0.16)');
     ctx.fillStyle = '#94a3b8';
-    ctx.fillRect(0, 535, W, 185);
+    ctx.fillRect(0, 545, W, 175);
     ctx.strokeStyle = INK;
     ctx.lineWidth = 4.5;
-    ctx.beginPath(); ctx.moveTo(0, 535); ctx.lineTo(W, 535); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 545); ctx.lineTo(W, 545); ctx.stroke();
 
-    drawComicRect(925, 190, 195, 345, 14, '#334155', INK, 4.5);
+    drawComicRect(925, 195, 195, 350, 14, '#334155', INK, 4.5);
     for (let row = 0; row < 5; row++) {
-      drawComicRect(945, 215 + row * 60, 155, 44, 8, '#0f172a', INK, 3);
+      drawComicRect(945, 220 + row * 60, 155, 44, 8, '#0f172a', INK, 3);
       ctx.fillStyle = revived ? '#fbbf24' : '#38bdf8';
       ctx.beginPath();
-      ctx.arc(966, 237 + row * 60, 7, 0, Math.PI * 2);
+      ctx.arc(966, 242 + row * 60, 7, 0, Math.PI * 2);
       ctx.fill();
     }
 
     if (local < 12.5) {
-      drawStudent(210, 520, 1.18, '#ec4899', '#4c1d95', true, t, speakingRole === 'maya', 'MAYA');
-      drawCartoonBurst(210, 345, 'NO WI-FI?!', '#ef4444', '#ffffff', 0.85, -0.1);
+      drawStudent(210, 530, 1.18, '#ec4899', '#4c1d95', true, t, speakingRole === 'maya', 'MAYA');
+      drawCartoonBurst(210, 350, 'CB OFFLINE?!', '#ef4444', '#ffffff', 0.85, -0.1);
     }
 
-    drawSaviors(675, 515, t, speakingRole);
+    drawSaviors(675, 525, t, speakingRole);
 
     ctx.strokeStyle = INK; ctx.lineWidth = 13;
-    ctx.beginPath(); ctx.moveTo(635, 425); ctx.lineTo(360, revived ? 290 : 500); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(635, 435); ctx.lineTo(360, revived ? 295 : 510); ctx.stroke();
     ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 6.5 + Math.sin(t * 18) * 2.5;
-    ctx.beginPath(); ctx.moveTo(635, 425); ctx.lineTo(360, revived ? 290 : 500); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(635, 435); ctx.lineTo(360, revived ? 295 : 510); ctx.stroke();
 
-    const aiY = revived ? lerp(500, 285, (local - 39.5) / 3.5) : 510;
+    const aiY = revived ? lerp(510, 290, (local - 39.5) / 3.5) : 520;
     drawAIProtagonist(360, aiY, revived ? 1.5 : 1.25, t, revived ? 1.7 : 0.85, !revived, speakingRole === 'ai');
 
     if (revived && local < 45.0) {
-      drawCartoonBurst(360, 175, 'KA-BOOM! REBOOT!', '#fbbf24', INK, 1.15, 0.1);
+      drawCartoonBurst(360, 180, 'KA-BOOM! REBOOT!', '#fbbf24', INK, 1.15, 0.1);
     }
 
     if (cue) {
-      if (cue.role === 'maya') { speakerX = 210; speakerY = 390; }
-      else if (cue.role === 'mrr') { speakerX = 635; speakerY = 350; }
-      else if (cue.role === 'anay') { speakerX = 740; speakerY = 370; }
+      if (cue.role === 'maya') { speakerX = 210; speakerY = 395; }
+      else if (cue.role === 'mrr') { speakerX = 635; speakerY = 355; }
+      else if (cue.role === 'anay') { speakerX = 740; speakerY = 375; }
     }
   }
 
@@ -718,29 +837,29 @@ function renderScene(t) {
   else if (t < 358.0) {
     drawHalftonePaper('#fef08a', 'rgba(234, 88, 12, 0.14)');
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillRect(0, 535, W, 185);
+    ctx.fillRect(0, 545, W, 175);
     ctx.strokeStyle = INK;
     ctx.lineWidth = 4.5;
-    ctx.beginPath(); ctx.moveTo(0, 535); ctx.lineTo(W, 535); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 545); ctx.lineTo(W, 545); ctx.stroke();
 
-    drawStudent(600, 515, 1.05, '#ec4899', '#4c1d95', true, t, false, 'A+ PITCH!');
-    drawStudent(725, 515, 1.05, '#0ea5e9', '#1e1b4b', false, t, false, 'DONE!');
+    drawStudent(600, 525, 1.05, '#ec4899', '#4c1d95', true, t, false, 'A+ ON CB!');
+    drawStudent(725, 525, 1.05, '#0ea5e9', '#1e1b4b', false, t, false, 'SUBMITTED!');
 
     drawAIProtagonist(330, 275, 1.65, t, 1.75, false, speakingRole === 'ai');
-    drawComicRect(175, 420, 310, 34, 10, '#38bdf8', INK, 3.5);
+    drawComicRect(175, 425, 310, 34, 10, '#38bdf8', INK, 3.5);
     ctx.fillStyle = '#090d16';
     ctx.font = '900 16px "Comic Sans MS", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('A.I. PREVAILS & POWERS CLASS!', 330, 443);
+    ctx.fillText('A.I. PREVAILS & POWERS CLASS!', 330, 448);
 
-    drawTheBoy(955, 520, 1.38, 'stand', t, -1, true, speakingRole === 'boy', 'happy');
-    drawComicRect(785, 290, 340, 34, 10, '#fbbf24', INK, 3.5);
+    drawTheBoy(955, 530, 1.38, 'stand', t, -1, true, speakingRole === 'boy', 'happy');
+    drawComicRect(785, 295, 340, 34, 10, '#fbbf24', INK, 3.5);
     ctx.fillStyle = '#090d16';
     ctx.font = '900 16px "Comic Sans MS", sans-serif';
-    ctx.fillText('THE BETTER PERSON  •  100% GRIT!', 955, 313);
+    ctx.fillText('THE BETTER PERSON  •  100% GRIT!', 955, 318);
 
     if (cue && cue.role === 'ai') { speakerX = 330; speakerY = 200; }
-    if (cue && cue.role === 'boy') { speakerX = 955; speakerY = 365; }
+    if (cue && cue.role === 'boy') { speakerX = 955; speakerY = 370; }
   }
 
   // 358s - 390s: COMIC BOOK END CREDITS
@@ -779,7 +898,7 @@ function renderScene(t) {
         ctx.fillText('GEMINI (A.I.)', 530, 375);
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 18px "Comic Sans MS", sans-serif';
-        ctx.fillText('Digital Architect & Unstoppable Neural Core', 530, 415);
+        ctx.fillText('Chromebook Speed-Runner & Unstoppable Neural Core', 530, 415);
       } else if (cardIdx === 1) {
         drawSaviors(330, 430, t, '');
         drawComicRect(500, 255, 660, 205, 16, '#fef08a', INK, 4.5);
@@ -795,7 +914,7 @@ function renderScene(t) {
         ctx.fillText('& ANAY GUPTA', 530, 398);
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 18px "Comic Sans MS", sans-serif';
-        ctx.fillText('Restorers of the Mainframe & Executive Producers', 530, 438);
+        ctx.fillText('Restorers of the School Wi-Fi & Executive Producers', 530, 438);
       } else {
         drawTheBoy(350, 435, 1.55, 'stand', t, 1, true, false, 'happy');
         drawComicRect(500, 275, 650, 165, 16, '#e0f2fe', INK, 4.5);
@@ -808,7 +927,7 @@ function renderScene(t) {
         ctx.fillText('THE BETTER PERSON', 530, 375);
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 18px "Comic Sans MS", sans-serif';
-        ctx.fillText('Champion of scholar.google.com & Human Integrity', 530, 415);
+        ctx.fillText('Champion of scholar.google.com & Zero Shortcuts', 530, 415);
       }
       ctx.restore();
     } else {
@@ -851,12 +970,11 @@ function renderScene(t) {
     }
   }
 
-  // Draw live Dog-Man comic speech/thought bubble over the active speaker
+  // Live comic speech/thought bubble above active speaker
   if (showBubbles && cue && t < 358.0) {
     drawComicSpeechBubble(cue, speakerX, speakerY);
   }
 
-  // Hand-drawn comic frame border around the movie screen
   ctx.strokeStyle = INK;
   ctx.lineWidth = 10;
   ctx.strokeRect(5, 5, W - 10, H - 10);
